@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase";
 import ProductForm from "@/components/admin/ProductForm";
 import { Product } from "@/types/product";
 
+export const runtime = "edge";
+
 export default function EditProductPage() {
     const params = useParams();
     const router = useRouter();
