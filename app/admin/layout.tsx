@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import AuthGuard from "@/components/admin/AuthGuard";
 
 const navItems = [
     {
@@ -30,59 +32,75 @@ export default function AdminLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        router.push("/login");
+    };
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            {/* Top Navigation */}
-            <nav className="bg-white shadow-sm border-b border-gray-200">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex h-16 justify-between items-center">
-                        <div className="flex items-center gap-4">
-                            <Link href="/admin" className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                                    <span className="text-white font-bold text-sm">TĐP</span>
-                                </div>
-                                <span className="font-semibold text-gray-900">Admin Panel</span>
-                            </Link>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <Link
-                                href="/"
-                                className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                                Xem website
-                            </Link>
+        <AuthGuard>
+            <div className="min-h-screen bg-gray-100">
+                {/* Top Navigation */}
+                <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div className="flex h-16 justify-between items-center">
+                            <div className="flex items-center gap-4">
+                                <Link href="/admin" className="flex items-center gap-2">
+                                    <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                                        <span className="text-white font-bold text-sm">TĐP</span>
+                                    </div>
+                                    <span className="font-semibold text-gray-900 hidden sm:block">Admin Panel</span>
+                                </Link>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <Link
+                                    href="/"
+                                    className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                                    target="_blank"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                    <span className="hidden sm:inline">Xem website</span>
+                                </Link>
+                                <div className="h-6 w-px bg-gray-200"></div>
+                                <button
+                                    onClick={handleLogout}
+                                    className="text-sm text-red-600 hover:text-red-700 font-medium"
+                                >
+                                    Đăng xuất
+                                </button>
+                            </div>
                         </div>
                     </div>
+                </nav>
+
+                <div className="flex">
+                    {/* Sidebar */}
+                    <aside className="w-64 bg-white shadow-sm min-h-[calc(100vh-4rem)] border-r border-gray-200 hidden md:block">
+                        <nav className="p-4 space-y-1">
+                            {navItems.map((item) => (
+                                <Link
+                                    key={item.name}
+                                    href={item.href}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${pathname === item.href
+                                            ? "bg-indigo-50 text-indigo-700"
+                                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                        }`}
+                                >
+                                    {item.icon}
+                                    {item.name}
+                                </Link>
+                            ))}
+                        </nav>
+                    </aside>
+
+                    {/* Main Content */}
+                    <main className="flex-1 p-6 md:p-8">{children}</main>
                 </div>
-            </nav>
-
-            <div className="flex">
-                {/* Sidebar */}
-                <aside className="w-64 bg-white shadow-sm min-h-[calc(100vh-4rem)] border-r border-gray-200">
-                    <nav className="p-4 space-y-1">
-                        {navItems.map((item) => (
-                            <Link
-                                key={item.name}
-                                href={item.href}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${pathname === item.href
-                                        ? "bg-indigo-50 text-indigo-700"
-                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                                    }`}
-                            >
-                                {item.icon}
-                                {item.name}
-                            </Link>
-                        ))}
-                    </nav>
-                </aside>
-
-                {/* Main Content */}
-                <main className="flex-1 p-6">{children}</main>
             </div>
-        </div>
+        </AuthGuard>
     );
 }

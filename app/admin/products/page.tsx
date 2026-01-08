@@ -1,29 +1,66 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Product } from "@/types/product";
+import { deleteAllProductImages } from "@/lib/storage";
 
-export const dynamic = "force-dynamic";
+export default function AdminProductsPage() {
+    const [products, setProducts] = useState<Product[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-async function getProducts(): Promise<Product[]> {
-    try {
-        const { data, error } = await supabase
-            .from("products")
-            .select("*")
-            .order("created_at", { ascending: false });
+    const fetchProducts = async () => {
+        try {
+            const { data, error } = await supabase
+                .from("products")
+                .select("*")
+                .order("created_at", { ascending: false });
 
-        if (error) {
+            if (error) throw error;
+            setProducts((data as Product[]) || []);
+        } catch (error) {
             console.error("Error fetching products:", error);
-            return [];
+        } finally {
+            setIsLoading(false);
         }
-        return (data as Product[]) || [];
-    } catch (error) {
-        console.error("Error fetching products:", error);
-        return [];
-    }
-}
+    };
 
-export default async function AdminProductsPage() {
-    const products = await getProducts();
+    useEffect(() => {
+        fetchProducts();
+    }, []);
+
+    const handleDelete = async (id: string, name: string) => {
+        if (!confirm(`Bạn có chắc muốn xóa sản phẩm "${name}"? Hành động này không thể hoàn tác.`)) {
+            return;
+        }
+
+        try {
+            // 1. Delete images from storage
+            await deleteAllProductImages(id);
+
+            // 2. Delete from database
+            const { error } = await supabase.from("products").delete().eq("id", id);
+
+            if (error) throw error;
+
+            // 3. Update UI
+            setProducts(prev => prev.filter(p => p.id !== id));
+            alert("Đã xóa sản phẩm thành công");
+        } catch (error) {
+            console.error("Error deleting product:", error);
+            alert("Xóa thất bại");
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -68,55 +105,78 @@ export default async function AdminProductsPage() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {products.map((product) => (
-                                    <tr key={product.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-lg"></div>
-                                                <div className="ml-4">
-                                                    <div className="text-sm font-medium text-gray-900">
-                                                        {product.name}
+                                {products.map((product) => {
+                                    const primaryImage = product.images?.find(img => img.is_primary) || product.images?.[0];
+
+                                    return (
+                                        <tr key={product.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center">
+                                                    <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-lg overflow-hidden relative">
+                                                        {primaryImage ? (
+                                                            <Image
+                                                                src={primaryImage.image_url}
+                                                                alt={product.name}
+                                                                fill
+                                                                className="object-cover"
+                                                                sizes="40px"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                </svg>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    <div className="text-sm text-gray-500">
-                                                        {product.slug}
+                                                    <div className="ml-4">
+                                                        <div className="text-sm font-medium text-gray-900">
+                                                            {product.name}
+                                                        </div>
+                                                        <div className="text-sm text-gray-500">
+                                                            {product.slug}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {product.code}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.type === "PAINT"
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {product.code}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span
+                                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.type === "PAINT"
                                                         ? "bg-blue-100 text-blue-800"
                                                         : "bg-amber-100 text-amber-800"
-                                                    }`}
-                                            >
-                                                {product.type === "PAINT" ? "Nước sơn" : "Gạch"}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {product.price
-                                                ? new Intl.NumberFormat("vi-VN", {
-                                                    style: "currency",
-                                                    currency: "VND",
-                                                }).format(product.price)
-                                                : "Liên hệ"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <Link
-                                                href={`/admin/products/${product.id}/edit`}
-                                                className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                            >
-                                                Sửa
-                                            </Link>
-                                            <button className="text-red-600 hover:text-red-900">
-                                                Xóa
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                                        }`}
+                                                >
+                                                    {product.type === "PAINT" ? "Nước sơn" : "Gạch"}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                {product.price
+                                                    ? new Intl.NumberFormat("vi-VN", {
+                                                        style: "currency",
+                                                        currency: "VND",
+                                                    }).format(product.price)
+                                                    : "Liên hệ"}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <Link
+                                                    href={`/admin/products/${product.id}/edit`}
+                                                    className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                                >
+                                                    Sửa
+                                                </Link>
+                                                <button
+                                                    onClick={() => handleDelete(product.id, product.name)}
+                                                    className="text-red-600 hover:text-red-900"
+                                                >
+                                                    Xóa
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

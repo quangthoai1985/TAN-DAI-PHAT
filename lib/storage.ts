@@ -1,47 +1,10 @@
-import { getSupabase } from './supabase';
+import { supabase } from './supabase';
 
 const BUCKET_NAME = 'product-images';
 
 /**
- * ===========================================
- * SUPABASE STORAGE SETUP GUIDE
- * ===========================================
- * 
- * 1. Tạo bucket "product-images" trong Supabase Dashboard:
- *    - Vào Storage > Create new bucket
- *    - Name: product-images
- *    - Public bucket: ON (cho phép public read)
- * 
- * 2. Thiết lập Storage Policies:
- *    
- *    -- Policy cho phép PUBLIC READ (SELECT):
- *    CREATE POLICY "Public Access" ON storage.objects
- *    FOR SELECT USING (bucket_id = 'product-images');
- *    
- *    -- Policy cho phép authenticated users INSERT:
- *    CREATE POLICY "Authenticated Upload" ON storage.objects
- *    FOR INSERT WITH CHECK (
- *      bucket_id = 'product-images' 
- *      AND auth.role() = 'authenticated'
- *    );
- *    
- *    -- Policy cho phép authenticated users DELETE:
- *    CREATE POLICY "Authenticated Delete" ON storage.objects
- *    FOR DELETE USING (
- *      bucket_id = 'product-images' 
- *      AND auth.role() = 'authenticated'
- *    );
- * 
- * 3. Cấu trúc folder:
- *    product-images/
- *    ├── {product_id}/
- *    │   ├── main.webp
- *    │   ├── thumb_1.webp
- *    │   └── thumb_2.webp
- * 
- * ===========================================
+ * Upload result interface
  */
-
 export interface UploadResult {
     success: boolean;
     path?: string;
@@ -128,11 +91,6 @@ export async function optimizeImage(
 
 /**
  * Upload product image to Supabase Storage
- * 
- * @param productId - Product ID for folder organization
- * @param file - File to upload
- * @param options - Upload options
- * @returns Upload result with path and public URL
  */
 export async function uploadProductImage(
     productId: string,
@@ -145,8 +103,6 @@ export async function uploadProductImage(
     const { optimize = true, isPrimary = false } = options;
 
     try {
-        const supabase = getSupabase();
-
         // Prepare file
         let uploadData: Blob | File = file;
         let fileName = generateFileName(file.name);
@@ -226,37 +182,6 @@ export async function uploadProductImages(
     return results;
 }
 
-/**
- * Delete product image from Supabase Storage
- * 
- * @param imagePath - Full path in storage (e.g., "product-id/filename.webp")
- */
-export async function deleteProductImage(imagePath: string): Promise<{
-    success: boolean;
-    error?: string;
-}> {
-    try {
-        const supabase = getSupabase();
-
-        const { error } = await supabase.storage
-            .from(BUCKET_NAME)
-            .remove([imagePath]);
-
-        if (error) {
-            return {
-                success: false,
-                error: error.message,
-            };
-        }
-
-        return { success: true };
-    } catch (error) {
-        return {
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-        };
-    }
-}
 
 /**
  * Delete all images for a product
@@ -267,8 +192,6 @@ export async function deleteAllProductImages(productId: string): Promise<{
     error?: string;
 }> {
     try {
-        const supabase = getSupabase();
-
         // List all files in product folder
         const { data: files, error: listError } = await supabase.storage
             .from(BUCKET_NAME)
@@ -314,77 +237,40 @@ export async function deleteAllProductImages(productId: string): Promise<{
 }
 
 /**
+ * Delete product image from Supabase Storage
+ */
+export async function deleteProductImage(imagePath: string): Promise<{
+    success: boolean;
+    error?: string;
+}> {
+    try {
+        const { error } = await supabase.storage
+            .from(BUCKET_NAME)
+            .remove([imagePath]);
+
+        if (error) {
+            return {
+                success: false,
+                error: error.message,
+            };
+        }
+
+        return { success: true };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+        };
+    }
+}
+
+/**
  * Get public URL for an image path
- * 
- * @param imagePath - Path in storage (e.g., "product-id/filename.webp")
- * @returns Public URL
  */
 export function getPublicUrl(imagePath: string): string {
-    const supabase = getSupabase();
-
     const { data } = supabase.storage
         .from(BUCKET_NAME)
         .getPublicUrl(imagePath);
 
     return data.publicUrl;
-}
-
-/**
- * Get transformed image URL with Supabase Image Transformations
- * (Requires Supabase Pro plan)
- * Note: Basic implementation - transform options require Pro plan
- */
-export function getTransformedUrl(
-    imagePath: string,
-    options: {
-        width?: number;
-        height?: number;
-        quality?: number;
-    } = {}
-): string {
-    // For basic plan, just return the public URL
-    // Transform options require Supabase Pro plan
-    return getPublicUrl(imagePath);
-}
-
-/**
- * List all images for a product
- */
-export async function listProductImages(productId: string): Promise<{
-    success: boolean;
-    images: { name: string; path: string; url: string }[];
-    error?: string;
-}> {
-    try {
-        const supabase = getSupabase();
-
-        const { data: files, error } = await supabase.storage
-            .from(BUCKET_NAME)
-            .list(productId);
-
-        if (error) {
-            return {
-                success: false,
-                images: [],
-                error: error.message,
-            };
-        }
-
-        const images = (files || []).map((file) => ({
-            name: file.name,
-            path: `${productId}/${file.name}`,
-            url: getPublicUrl(`${productId}/${file.name}`),
-        }));
-
-        return {
-            success: true,
-            images,
-        };
-    } catch (error) {
-        return {
-            success: false,
-            images: [],
-            error: error instanceof Error ? error.message : 'Unknown error',
-        };
-    }
 }

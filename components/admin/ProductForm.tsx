@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Product, ProductType, PaintSpecs, TileSpecs } from "@/types/product";
+import { Product, ProductType, PaintSpecs, TileSpecs, ProductImage } from "@/types/product";
+import { supabase } from "@/lib/supabase";
+import { uploadProductImage } from "@/lib/storage";
 
 interface ProductFormProps {
     initialData?: Product;
@@ -21,7 +23,7 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
         slug: initialData?.slug || "",
         description: initialData?.description || "",
         type: initialData?.type || ("PAINT" as ProductType),
-        price: initialData?.price || "",
+        price: initialData?.price?.toString() || "",
         // Paint specs
         volume: (initialData?.specs as PaintSpecs)?.volume || "",
         color: (initialData?.specs as PaintSpecs)?.color || "",
@@ -34,10 +36,40 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
         thickness: (initialData?.specs as TileSpecs)?.thickness || "",
     });
 
-    const [images, setImages] = useState<File[]>([]);
-    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    const [newImages, setNewImages] = useState<File[]>([]);
+    const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+    const [existingImages, setExistingImages] = useState<ProductImage[]>(initialData?.images || []);
 
-    // Auto-generate slug from name
+    // Update form data if initialData changes
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                code: initialData.code || "",
+                name: initialData.name || "",
+                slug: initialData.slug || "",
+                description: initialData.description || "",
+                type: initialData.type || "PAINT",
+                price: initialData.price?.toString() || "",
+                volume: (initialData.specs as PaintSpecs)?.volume || "",
+                color: (initialData.specs as PaintSpecs)?.color || "",
+                finish: (initialData.specs as PaintSpecs)?.finish || "",
+                coverage: (initialData.specs as PaintSpecs)?.coverage || "",
+                size: (initialData.specs as TileSpecs)?.size || "",
+                material: (initialData.specs as TileSpecs)?.material || "",
+                surface: (initialData.specs as TileSpecs)?.surface || "",
+                thickness: (initialData.specs as TileSpecs)?.thickness || "",
+            });
+            setExistingImages(initialData.images || []);
+        }
+    }, [initialData]);
+
+    // Cleanup object URLs
+    useEffect(() => {
+        return () => {
+            previewUrls.forEach(url => URL.revokeObjectURL(url));
+        };
+    }, [previewUrls]);
+
     const generateSlug = (name: string) => {
         return name
             .toLowerCase()
@@ -50,32 +82,47 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const name = e.target.value;
+        const slug = generateSlug(name);
         setFormData((prev) => ({
             ...prev,
             name,
-            slug: generateSlug(name),
+            slug: isEditing ? prev.slug : slug,
         }));
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length > 0) {
-            setImages((prev) => [...prev, ...files]);
+            setNewImages((prev) => [...prev, ...files]);
 
-            // Create previews
-            files.forEach((file) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setImagePreviews((prev) => [...prev, reader.result as string]);
-                };
-                reader.readAsDataURL(file);
-            });
+            const newPreviews = files.map(file => URL.createObjectURL(file));
+            setPreviewUrls((prev) => [...prev, ...newPreviews]);
         }
     };
 
-    const removeImage = (index: number) => {
-        setImages((prev) => prev.filter((_, i) => i !== index));
-        setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    const removeNewImage = (index: number) => {
+        setNewImages((prev) => prev.filter((_, i) => i !== index));
+        setPreviewUrls((prev) => {
+            const urlToRemove = prev[index];
+            URL.revokeObjectURL(urlToRemove);
+            return prev.filter((_, i) => i !== index);
+        });
+    };
+
+    const removeExistingImage = (index: number) => {
+        if (!confirm("Bạn có chắc muốn xóa ảnh này?")) return;
+        setExistingImages((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const setPrimaryImage = (index: number, isNew: boolean) => {
+        if (isNew) {
+            alert("Vui lòng lưu sản phẩm sau đó chỉnh sửa để đặt ảnh chính.");
+        } else {
+            setExistingImages(prev => prev.map((img, i) => ({
+                ...img,
+                is_primary: i === index
+            })));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -83,7 +130,6 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
         setIsLoading(true);
 
         try {
-            // Build specs based on product type
             const specs =
                 formData.type === "PAINT"
                     ? {
@@ -107,19 +153,64 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                 type: formData.type,
                 price: formData.price ? Number(formData.price) : null,
                 specs,
-                images: [], // Will be updated after image upload
             };
 
-            // TODO: Implement actual API call to save product
-            console.log("Product data:", productData);
-            console.log("Images to upload:", images);
+            let productId = initialData?.id;
 
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            if (isEditing && productId) {
+                const { error } = await supabase
+                    .from("products")
+                    .update(productData)
+                    .eq("id", productId);
+                if (error) throw error;
+            } else {
+                const { data, error } = await supabase
+                    .from("products")
+                    .insert(productData)
+                    .select("id")
+                    .single();
+                if (error) throw error;
+                productId = data.id;
+            }
+
+            if (!productId) throw new Error("No Product ID found");
+
+            let finalImages = [...existingImages];
+
+            if (newImages.length > 0) {
+                for (const file of newImages) {
+                    const result = await uploadProductImage(productId, file);
+                    if (result.success && result.url) {
+                        finalImages.push({
+                            id: crypto.randomUUID(),
+                            image_url: result.url,
+                            is_primary: finalImages.length === 0,
+                            display_order: finalImages.length,
+                        });
+                    } else {
+                        console.error("Failed to upload image:", result.error);
+                    }
+                }
+            }
+
+            const hasPrimary = finalImages.some(img => img.is_primary);
+            if (!hasPrimary && finalImages.length > 0) {
+                finalImages[0].is_primary = true;
+            }
+
+            const { error: imageUpdateError } = await supabase
+                .from("products")
+                .update({ images: finalImages })
+                .eq("id", productId);
+
+            if (imageUpdateError) throw imageUpdateError;
 
             router.push("/admin/products");
-        } catch (error) {
+            router.refresh();
+
+        } catch (error: any) {
             console.error("Error saving product:", error);
+            alert("Lỗi khi lưu sản phẩm: " + (error.message || "Không xác định"));
         } finally {
             setIsLoading(false);
         }
@@ -316,35 +407,59 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Hình ảnh sản phẩm</h2>
 
                 <div className="space-y-4">
-                    {/* Image Previews */}
-                    {imagePreviews.length > 0 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                            {imagePreviews.map((preview, index) => (
-                                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
-                                    <Image
-                                        src={preview}
-                                        alt={`Preview ${index + 1}`}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => removeImage(index)}
-                                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                    {index === 0 && (
-                                        <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-indigo-600 text-white text-xs rounded">
-                                            Ảnh chính
-                                        </span>
-                                    )}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        {/* Existing Images */}
+                        {existingImages.map((img, index) => (
+                            <div key={img.id || index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
+                                <Image
+                                    src={img.image_url}
+                                    alt={`Current ${index + 1}`}
+                                    fill
+                                    className="object-cover"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeExistingImage(index)}
+                                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 z-10"
+                                    title="Xóa ảnh"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                <div
+                                    className={`absolute bottom-0 left-0 right-0 p-2 text-xs font-semibold text-center cursor-pointer ${img.is_primary ? 'bg-indigo-600 text-white' : 'bg-gray-800/70 text-white hover:bg-gray-700'}`}
+                                    onClick={() => setPrimaryImage(index, false)}
+                                >
+                                    {img.is_primary ? 'Ảnh chính' : 'Đặt làm ảnh chính'}
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            </div>
+                        ))}
+
+                        {/* New Image Previews */}
+                        {previewUrls.map((preview, index) => (
+                            <div key={`new-${index}`} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
+                                <Image
+                                    src={preview}
+                                    alt={`New Preview ${index + 1}`}
+                                    fill
+                                    className="object-cover"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeNewImage(index)}
+                                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 z-10"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-green-600 text-white text-xs rounded">
+                                    Mới
+                                </span>
+                            </div>
+                        ))}
+                    </div>
 
                     {/* Upload Button */}
                     <div

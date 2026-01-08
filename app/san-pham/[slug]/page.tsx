@@ -4,6 +4,7 @@ import ProductGallery from "@/components/product/ProductGallery";
 import { Product, PaintSpecs, TileSpecs } from "@/types/product";
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 interface Props {
     params: Promise<{
