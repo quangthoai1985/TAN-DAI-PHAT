@@ -18,6 +18,11 @@ Dưới đây là các bước chi tiết để deploy dự án Next.js (App Rou
     *   **Build command**: nhập `npm run pages:build` (hoặc `npx @cloudflare/next-on-pages`).
     *   **Build output directory**: nhập `.vercel/output/static` (QUAN TRỌNG: Mặc định có thể là `.next`, hãy đổi thành `.vercel/output/static`).
 
+4.  **Cấu Hình Compatibility Flags (QUAN TRỌNG FIX LỖI NODE.JS)**:
+    *   Vào **Settings** > **Build & deployments** > **Compatibility flags**.
+    *   Thêm flag: `nodejs_compat`.
+    *   Lưu lại và **Deploy lại** (Vào deployments -> Retry deployment).
+
 ## 3. Cấu Hình Biến Môi Trường (Environment Variables)
 
 Trong phần **Environment variables** (tại bước setup hoặc vào Settings > Environment variables sau khi tạo):

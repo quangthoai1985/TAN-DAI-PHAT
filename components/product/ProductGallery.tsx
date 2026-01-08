@@ -26,6 +26,7 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
     const [scale, setScale] = useState(1);
     const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [isAnimating, setIsAnimating] = useState(false);
     const lightboxRef = useRef<HTMLDivElement>(null);
     const lastTouchDistance = useRef<number | null>(null);
 
@@ -67,14 +68,20 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
 
     const openLightbox = useCallback(() => {
         setIsLightboxOpen(true);
+        setIsAnimating(true);
         setScale(1);
         setPosition({ x: 0, y: 0 });
+        setTimeout(() => setIsAnimating(false), 300);
     }, []);
 
     const closeLightbox = useCallback(() => {
-        setIsLightboxOpen(false);
-        setScale(1);
-        setPosition({ x: 0, y: 0 });
+        setIsAnimating(true);
+        setTimeout(() => {
+            setIsLightboxOpen(false);
+            setIsAnimating(false);
+            setScale(1);
+            setPosition({ x: 0, y: 0 });
+        }, 200);
     }, []);
 
     const goToNext = useCallback(() => {
@@ -129,48 +136,67 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
 
     if (!images || images.length === 0) {
         return (
-            <div className="w-full aspect-[4/3] bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">
-                Không có hình ảnh
+            <div className="w-full aspect-[4/3] bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400">
+                <div className="text-center">
+                    <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-sm">Không có hình ảnh</p>
+                </div>
             </div>
         );
     }
 
     return (
         <>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 sm:gap-4">
                 {/* Main Image */}
                 <div
-                    className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 cursor-zoom-in group shadow-lg"
+                    className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100 cursor-zoom-in group shadow-lg transition-shadow duration-300 hover:shadow-xl"
                     onClick={openLightbox}
                 >
                     <Image
                         src={activeImage.image_url}
                         alt="Product image"
                         fill
-                        className="object-contain transition-transform duration-300 group-hover:scale-105"
+                        className="object-contain transition-transform duration-500 ease-out group-hover:scale-105"
                         sizes="(max-width: 768px) 100vw, 60vw"
                         priority={activeImage.is_primary}
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
-                    <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 text-sm font-medium text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5">
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
+
+                    {/* Zoom hint */}
+                    <div className="absolute bottom-4 right-4 bg-white/95 backdrop-blur-sm rounded-full px-4 py-2 text-sm font-medium text-gray-700 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 shadow-lg flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                         </svg>
                         Phóng to
                     </div>
+
+                    {/* Image counter */}
+                    {sortedImages.length > 1 && (
+                        <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium text-white">
+                            {activeIndex + 1} / {sortedImages.length}
+                        </div>
+                    )}
                 </div>
 
                 {/* Thumbnails */}
                 {sortedImages.length > 1 && (
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300">
+                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                         {sortedImages.map((img, index) => (
                             <button
                                 key={img.id}
                                 onClick={() => setActiveIndex(index)}
-                                className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${activeIndex === index
-                                        ? "border-indigo-500 ring-2 ring-indigo-200 shadow-md"
-                                        : "border-gray-200 opacity-70 hover:opacity-100 hover:border-gray-300"
-                                    }`}
+                                className={`
+                                    relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden
+                                    transition-all duration-200 ease-out touch-target
+                                    ${activeIndex === index
+                                        ? "ring-2 ring-indigo-500 ring-offset-2 shadow-lg scale-105"
+                                        : "opacity-60 hover:opacity-100 border border-gray-200 hover:border-gray-300"
+                                    }
+                                `}
                             >
                                 <Image
                                     src={img.image_url}
@@ -189,16 +215,24 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
             {isLightboxOpen && (
                 <div
                     ref={lightboxRef}
-                    className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+                    className={`
+                        fixed inset-0 z-50 bg-black/95 flex items-center justify-center
+                        transition-opacity duration-300
+                        ${isAnimating ? (isLightboxOpen ? "opacity-0" : "opacity-100") : "opacity-100"}
+                    `}
                     onClick={closeLightbox}
                     onTouchStart={handleTouchStart}
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
+                    style={{ animation: isLightboxOpen ? "fadeIn 0.3s ease-out forwards" : "" }}
                 >
                     {/* Close button */}
                     <button
-                        className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
-                        onClick={closeLightbox}
+                        className="absolute top-4 right-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 text-white backdrop-blur-sm touch-target"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            closeLightbox();
+                        }}
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -206,14 +240,14 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                     </button>
 
                     {/* Image counter */}
-                    <div className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-full bg-white/10 text-white text-sm font-medium">
+                    <div className="absolute top-4 left-4 z-10 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-medium">
                         {activeIndex + 1} / {sortedImages.length}
                     </div>
 
                     {/* Prev button */}
                     {sortedImages.length > 1 && (
                         <button
-                            className="absolute left-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
+                            className="absolute left-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 text-white backdrop-blur-sm touch-target hover:scale-110"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 goToPrev();
@@ -228,7 +262,7 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                     {/* Next button */}
                     {sortedImages.length > 1 && (
                         <button
-                            className="absolute right-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
+                            className="absolute right-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 text-white backdrop-blur-sm touch-target hover:scale-110"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 goToNext();
@@ -245,6 +279,7 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                         className="relative w-full h-full max-w-5xl max-h-[90vh] m-4"
                         onClick={(e) => e.stopPropagation()}
                         onTouchEnd={handleDoubleTap}
+                        style={{ animation: "scaleIn 0.3s ease-out forwards" }}
                     >
                         <Image
                             src={activeImage.image_url}
@@ -260,7 +295,7 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                     </div>
 
                     {/* Zoom hint on mobile */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-white/10 text-white text-sm md:hidden">
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm md:hidden">
                         Chạm 2 lần để phóng to
                     </div>
                 </div>

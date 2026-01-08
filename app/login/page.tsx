@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Input, Label } from "@/components/ui/input";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -17,7 +20,7 @@ export default function LoginPage() {
         setError(null);
 
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
@@ -28,45 +31,64 @@ export default function LoginPage() {
 
             router.push("/admin");
             router.refresh();
-        } catch (err: any) {
-            setError(err.message || "Đăng nhập thất bại");
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Đăng nhập thất bại";
+            setError(message);
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="mx-auto w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">TĐP</span>
-                </div>
-                <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-                    Đăng nhập hệ thống
-                </h2>
-                <p className="mt-2 text-center text-sm text-gray-600">
-                    Dành cho quản trị viên
-                </p>
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-50" />
+                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-100 rounded-full blur-3xl opacity-50" />
             </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-                    <form className="space-y-6" onSubmit={handleLogin}>
-                        {error && (
-                            <div className="p-4 rounded-md bg-red-50 text-sm text-red-700">
-                                {error}
-                            </div>
-                        )}
+            <div className="relative sm:mx-auto sm:w-full sm:max-w-md animate-fade-in-up">
+                {/* Logo */}
+                <div className="flex flex-col items-center">
+                    <div className="w-14 h-14 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/30">
+                        <span
+                            className="text-white font-bold text-xl"
+                            style={{ fontFamily: "var(--font-montserrat)" }}
+                        >
+                            TĐP
+                        </span>
+                    </div>
+                    <h2
+                        className="mt-6 text-center text-2xl sm:text-3xl font-bold tracking-tight text-gray-900"
+                        style={{ fontFamily: "var(--font-montserrat)" }}
+                    >
+                        Đăng nhập hệ thống
+                    </h2>
+                    <p className="mt-2 text-center text-sm text-gray-600">
+                        Dành cho quản trị viên
+                    </p>
+                </div>
 
-                        <div>
-                            <label
-                                htmlFor="email"
-                                className="block text-sm font-medium text-gray-700"
-                            >
-                                Email
-                            </label>
-                            <div className="mt-1">
-                                <input
+                {/* Login Card */}
+                <Card className="mt-8 shadow-xl border-0 bg-white/80 backdrop-blur-xl">
+                    <CardContent className="pt-6">
+                        <form className="space-y-5" onSubmit={handleLogin}>
+                            {/* Error Alert */}
+                            {error && (
+                                <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700 animate-fade-in flex items-start gap-3">
+                                    <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>{error}</span>
+                                </div>
+                            )}
+
+                            {/* Email Field */}
+                            <div className="space-y-2">
+                                <Label htmlFor="email" className="text-gray-700">
+                                    Email
+                                </Label>
+                                <Input
                                     id="email"
                                     name="email"
                                     type="email"
@@ -74,20 +96,17 @@ export default function LoginPage() {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                                    placeholder="admin@tandaiphat.vn"
+                                    className="h-12"
                                 />
                             </div>
-                        </div>
 
-                        <div>
-                            <label
-                                htmlFor="password"
-                                className="block text-sm font-medium text-gray-700"
-                            >
-                                Mật khẩu
-                            </label>
-                            <div className="mt-1">
-                                <input
+                            {/* Password Field */}
+                            <div className="space-y-2">
+                                <Label htmlFor="password" className="text-gray-700">
+                                    Mật khẩu
+                                </Label>
+                                <Input
                                     id="password"
                                     name="password"
                                     type="password"
@@ -95,44 +114,36 @@ export default function LoginPage() {
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                                    placeholder="••••••••"
+                                    className="h-12"
                                 />
                             </div>
-                        </div>
 
-                        <div>
-                            <button
+                            {/* Submit Button */}
+                            <Button
                                 type="submit"
                                 disabled={isLoading}
-                                className="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+                                isLoading={isLoading}
+                                className="w-full h-12 text-base"
                             >
-                                {isLoading ? (
-                                    <svg
-                                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                        ></circle>
-                                        <path
-                                            className="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                        ></path>
-                                    </svg>
-                                ) : null}
                                 {isLoading ? "Đang xử lý..." : "Đăng nhập"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+
+                {/* Back to home */}
+                <p className="mt-6 text-center">
+                    <a
+                        href="/"
+                        className="text-sm text-gray-500 hover:text-indigo-600 transition-colors inline-flex items-center gap-1.5"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Quay lại trang chủ
+                    </a>
+                </p>
             </div>
         </div>
     );
