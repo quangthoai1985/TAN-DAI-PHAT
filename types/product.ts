@@ -2,8 +2,9 @@ export type ProductType = 'PAINT' | 'TILE';
 
 export interface ProductImage {
     id: string;
-    url: string;
-    alt?: string;
+    image_url: string;
+    is_primary: boolean;
+    display_order: number;
 }
 
 export interface PaintSpecs {
