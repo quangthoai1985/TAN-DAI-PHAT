@@ -109,10 +109,14 @@ export default function AdminProductsPage() {
                                     const primaryImage = product.images?.find(img => img.is_primary) || product.images?.[0];
 
                                     return (
-                                        <tr key={product.id} className="hover:bg-gray-50">
+                                        <tr
+                                            key={product.id}
+                                            className="hover:bg-indigo-50 cursor-pointer transition-colors group"
+                                            onClick={() => window.location.href = `/admin/products/${product.id}/edit`}
+                                        >
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
-                                                    <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-lg overflow-hidden relative">
+                                                    <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-lg overflow-hidden relative group-hover:ring-2 group-hover:ring-indigo-300 transition-all">
                                                         {primaryImage ? (
                                                             <Image
                                                                 src={primaryImage.image_url}
@@ -130,7 +134,7 @@ export default function AdminProductsPage() {
                                                         )}
                                                     </div>
                                                     <div className="ml-4">
-                                                        <div className="text-sm font-medium text-gray-900">
+                                                        <div className="text-sm font-medium text-gray-900 group-hover:text-indigo-700 transition-colors">
                                                             {product.name}
                                                         </div>
                                                         <div className="text-sm text-gray-500">
@@ -161,15 +165,12 @@ export default function AdminProductsPage() {
                                                     : "Liên hệ"}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <Link
-                                                    href={`/admin/products/${product.id}/edit`}
-                                                    className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                                >
-                                                    Sửa
-                                                </Link>
                                                 <button
-                                                    onClick={() => handleDelete(product.id, product.name)}
-                                                    className="text-red-600 hover:text-red-900"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(product.id, product.name);
+                                                    }}
+                                                    className="text-red-600 hover:text-red-900 hover:bg-red-50 px-3 py-1 rounded-lg transition-colors"
                                                 >
                                                     Xóa
                                                 </button>
