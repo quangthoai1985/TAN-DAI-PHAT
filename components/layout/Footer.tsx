@@ -14,33 +14,30 @@ const footerLinks = {
 
 export default function Footer() {
     return (
-        <footer className="bg-gray-900 text-gray-300">
+        <footer className="bg-blue-900 text-white">
             <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8 lg:gap-12">
                     {/* Company Info */}
                     <div className="md:col-span-2">
-                        <Link href="/" className="flex items-center gap-3 group w-fit">
-                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 transition-all duration-300 group-hover:shadow-indigo-500/40 group-hover:scale-105">
-                                <span className="text-white font-bold text-lg" style={{ fontFamily: "var(--font-montserrat)" }}>
+                        <Link href="/" className="flex items-center gap-4 group w-fit">
+                            <div className="w-12 h-12 bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20 transition-all duration-300 group-hover:shadow-red-500/40 group-hover:scale-105">
+                                <span className="text-white font-bold text-xl" style={{ fontFamily: "var(--font-montserrat)" }}>
                                     TĐP
                                 </span>
                             </div>
                             <div>
-                                <p className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: "var(--font-montserrat)" }}>
+                                <p className="text-2xl font-bold text-white tracking-tight leading-none group-hover:text-red-500 transition-colors" style={{ fontFamily: "var(--font-montserrat)" }}>
                                     TÂN ĐẠI PHÁT
-                                </p>
-                                <p className="text-xs text-gray-400 -mt-0.5">
-                                    Vật liệu xây dựng
                                 </p>
                             </div>
                         </Link>
-                        <p className="mt-4 text-sm text-gray-400 max-w-md leading-relaxed">
+                        <p className="mt-6 text-sm text-blue-100 max-w-md leading-relaxed">
                             Cung cấp vật liệu xây dựng chất lượng cao: sơn nước, gạch ốp lát và nhiều sản phẩm khác với giá cả cạnh tranh.
                         </p>
                         <div className="mt-6 flex gap-3">
                             <a
-                                href="#"
-                                className="p-2.5 bg-gray-800 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-all duration-200 hover:scale-110"
+                                href="https://www.facebook.com/profile.php?id=61551812887711"
+                                className="p-2.5 bg-blue-800 rounded-lg text-blue-200 hover:text-white hover:bg-red-600 transition-all duration-200 hover:scale-110"
                                 aria-label="Facebook"
                             >
                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -48,8 +45,8 @@ export default function Footer() {
                                 </svg>
                             </a>
                             <a
-                                href="https://zalo.me/0123456789"
-                                className="p-2.5 bg-gray-800 rounded-lg text-gray-400 hover:text-white hover:bg-blue-600 transition-all duration-200 hover:scale-110"
+                                href="https://zalo.me/0907970889"
+                                className="p-2.5 bg-blue-800 rounded-lg text-blue-200 hover:text-white hover:bg-red-600 transition-all duration-200 hover:scale-110"
                                 aria-label="Zalo"
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -72,9 +69,9 @@ export default function Footer() {
                                 <li key={link.name}>
                                     <Link
                                         href={link.href}
-                                        className="text-sm text-gray-400 hover:text-white transition-colors duration-200 inline-flex items-center group"
+                                        className="text-sm text-blue-100 hover:text-white transition-colors duration-200 inline-flex items-center group"
                                     >
-                                        <span className="w-0 opacity-0 group-hover:w-2 group-hover:opacity-100 transition-all duration-200 mr-0 group-hover:mr-1">
+                                        <span className="w-0 opacity-0 group-hover:w-2 group-hover:opacity-100 transition-all duration-200 mr-0 group-hover:mr-1 text-red-500">
                                             →
                                         </span>
                                         {link.name}
@@ -93,33 +90,33 @@ export default function Footer() {
                             Liên hệ
                         </h3>
                         <ul className="space-y-3 text-sm">
-                            <li className="flex items-start gap-3 text-gray-400">
-                                <svg className="w-5 h-5 mt-0.5 flex-shrink-0 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <li className="flex items-start gap-3 text-blue-100">
+                                <svg className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                <span className="leading-relaxed">123 Đường ABC, Quận XYZ, TP.HCM</span>
+                                <span className="leading-relaxed">817, Tôn Đức Thắng, phường Châu Đốc, tỉnh An Giang</span>
                             </li>
                             <li className="flex items-center gap-3">
-                                <svg className="w-5 h-5 flex-shrink-0 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 flex-shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
                                 <a
-                                    href="tel:0123456789"
-                                    className="text-gray-400 hover:text-white transition-colors duration-200"
+                                    href="tel:0907970889"
+                                    className="text-blue-100 hover:text-white transition-colors duration-200"
                                 >
-                                    0123 456 789
+                                    0907970889
                                 </a>
                             </li>
                             <li className="flex items-center gap-3">
-                                <svg className="w-5 h-5 flex-shrink-0 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 flex-shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                 </svg>
                                 <a
-                                    href="mailto:info@tandaiphat.vn"
-                                    className="text-gray-400 hover:text-white transition-colors duration-200"
+                                    href="mailto:nguyenthinhutamattp@gmail.com"
+                                    className="text-blue-100 hover:text-white transition-colors duration-200"
                                 >
-                                    info@tandaiphat.vn
+                                    nguyenthinhutamattp@gmail.com
                                 </a>
                             </li>
                         </ul>
@@ -127,11 +124,11 @@ export default function Footer() {
                 </div>
 
                 {/* Copyright */}
-                <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-                    <p>© 2024 TÂN ĐẠI PHÁT. Tất cả quyền được bảo lưu.</p>
+                <div className="mt-12 pt-8 border-t border-blue-800/50 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-blue-200">
+                    <p>© 2026 TÂN ĐẠI PHÁT. Tất cả quyền được bảo lưu.</p>
                     <Link
                         href="/login"
-                        className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 transition-colors duration-200 group"
+                        className="flex items-center gap-1.5 text-blue-200 hover:text-white transition-colors duration-200 group"
                     >
                         <svg className="w-4 h-4 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
