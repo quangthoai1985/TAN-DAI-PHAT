@@ -57,7 +57,7 @@ export default function AdminProductsPage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-600"></div>
             </div>
         );
     }
@@ -71,7 +71,7 @@ export default function AdminProductsPage() {
                 </div>
                 <Link
                     href="/admin/products/new"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -111,12 +111,12 @@ export default function AdminProductsPage() {
                                     return (
                                         <tr
                                             key={product.id}
-                                            className="hover:bg-indigo-50 cursor-pointer transition-colors group"
+                                            className="hover:bg-red-50 cursor-pointer transition-colors group"
                                             onClick={() => window.location.href = `/admin/products/${product.id}/edit`}
                                         >
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
-                                                    <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-lg overflow-hidden relative group-hover:ring-2 group-hover:ring-indigo-300 transition-all">
+                                                    <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-lg overflow-hidden relative group-hover:ring-2 group-hover:ring-red-300 transition-all">
                                                         {primaryImage ? (
                                                             <Image
                                                                 src={primaryImage.image_url}
@@ -134,7 +134,7 @@ export default function AdminProductsPage() {
                                                         )}
                                                     </div>
                                                     <div className="ml-4">
-                                                        <div className="text-sm font-medium text-gray-900 group-hover:text-indigo-700 transition-colors">
+                                                        <div className="text-sm font-medium text-gray-900 group-hover:text-red-700 transition-colors">
                                                             {product.name}
                                                         </div>
                                                         <div className="text-sm text-gray-500">
@@ -205,7 +205,7 @@ export default function AdminProductsPage() {
                         <div className="mt-6">
                             <Link
                                 href="/admin/products/new"
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

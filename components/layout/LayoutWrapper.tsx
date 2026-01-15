@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { getSiteSettings, SiteSettings } from "@/lib/settings";
 
 export default function LayoutWrapper({
     children,
@@ -11,6 +13,13 @@ export default function LayoutWrapper({
 }) {
     const pathname = usePathname();
     const isAdminPage = pathname?.startsWith("/admin");
+    const [settings, setSettings] = useState<SiteSettings>({});
+
+    useEffect(() => {
+        if (!isAdminPage) {
+            getSiteSettings().then(setSettings);
+        }
+    }, [isAdminPage]);
 
     // Don't show Header/Footer on admin pages
     if (isAdminPage) {
@@ -19,11 +28,11 @@ export default function LayoutWrapper({
 
     return (
         <>
-            <Header />
+            <Header logoUrl={settings.header_logo} />
             <main className="min-h-screen">
                 {children}
             </main>
-            <Footer />
+            <Footer logoUrl={settings.footer_logo} />
         </>
     );
 }

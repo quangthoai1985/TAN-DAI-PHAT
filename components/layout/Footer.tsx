@@ -12,7 +12,7 @@ const footerLinks = {
     ],
 };
 
-export default function Footer() {
+export default function Footer({ logoUrl }: { logoUrl?: string }) {
     return (
         <footer className="bg-blue-900 text-white">
             <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
@@ -20,10 +20,16 @@ export default function Footer() {
                     {/* Company Info */}
                     <div className="md:col-span-2">
                         <Link href="/" className="flex items-center gap-4 group w-fit">
-                            <div className="w-12 h-12 bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20 transition-all duration-300 group-hover:shadow-red-500/40 group-hover:scale-105">
-                                <span className="text-white font-bold text-xl" style={{ fontFamily: "var(--font-montserrat)" }}>
-                                    TĐP
-                                </span>
+                            <div className="w-12 h-12 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105">
+                                {logoUrl ? (
+                                    <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20">
+                                        <span className="text-white font-bold text-xl" style={{ fontFamily: "var(--font-montserrat)" }}>
+                                            TĐP
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-white tracking-tight leading-none group-hover:text-red-500 transition-colors" style={{ fontFamily: "var(--font-montserrat)" }}>

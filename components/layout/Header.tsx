@@ -11,7 +11,7 @@ const navigation = [
     { name: "Gạch ốp lát", href: "/gach" },
 ];
 
-export default function Header() {
+export default function Header({ logoUrl }: { logoUrl?: string }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const pathname = usePathname();
@@ -48,10 +48,16 @@ export default function Header() {
                         href="/"
                         className="flex items-center gap-4 group transition-transform duration-200 hover:scale-[1.02]"
                     >
-                        <div className="relative w-12 h-12 bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20 transition-shadow duration-300 group-hover:shadow-red-500/40">
-                            <span className="text-white font-bold text-xl" style={{ fontFamily: "var(--font-montserrat)" }}>
-                                TĐP
-                            </span>
+                        <div className="relative w-12 h-12 flex items-center justify-center overflow-hidden">
+                            {logoUrl ? (
+                                <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                            ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20">
+                                    <span className="text-white font-bold text-xl" style={{ fontFamily: "var(--font-montserrat)" }}>
+                                        TĐP
+                                    </span>
+                                </div>
+                            )}
                         </div>
                         <div className="hidden sm:block">
                             <p className="text-3xl font-bold text-red-600 tracking-tight leading-none" style={{ fontFamily: "var(--font-montserrat)" }}>

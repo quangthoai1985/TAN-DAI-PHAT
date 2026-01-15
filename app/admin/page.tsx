@@ -109,9 +109,9 @@ export default function AdminDashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
             ),
-            color: "text-indigo-600",
-            bgColor: "bg-gradient-to-br from-indigo-100 to-indigo-50",
-            borderColor: "border-indigo-200",
+            color: "text-red-600",
+            bgColor: "bg-gradient-to-br from-red-100 to-red-50",
+            borderColor: "border-red-200",
         },
         {
             title: "Nước sơn",
@@ -202,7 +202,7 @@ export default function AdminDashboard() {
                     <div className="flex flex-wrap gap-4">
                         <Link
                             href="/admin/products/new"
-                            className="group inline-flex items-center justify-center gap-3 h-12 px-6 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl font-semibold text-sm shadow-md hover:from-indigo-700 hover:to-indigo-800 hover:shadow-lg hover:scale-105 transition-all duration-300 whitespace-nowrap"
+                            className="group inline-flex items-center justify-center gap-3 h-12 px-6 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl font-semibold text-sm shadow-md hover:from-red-700 hover:to-red-800 hover:shadow-lg hover:scale-105 transition-all duration-300 whitespace-nowrap"
                         >
                             <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -267,8 +267,8 @@ export default function AdminDashboard() {
                                     className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                                 >
                                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${activity.productType === "Nước sơn"
-                                            ? "bg-blue-100 text-blue-600"
-                                            : "bg-amber-100 text-amber-600"
+                                        ? "bg-blue-100 text-blue-600"
+                                        : "bg-amber-100 text-amber-600"
                                         }`}>
                                         {activity.productType === "Nước sơn" ? (
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -290,7 +290,7 @@ export default function AdminDashboard() {
                                     </div>
                                     <Link
                                         href={`/admin/products/${activity.id}/edit`}
-                                        className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                                        className="text-red-600 hover:text-red-800 text-sm font-medium"
                                     >
                                         Xem
                                     </Link>
