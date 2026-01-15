@@ -56,6 +56,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 // This is an async server component
 export default async function RootLayout({
