@@ -148,12 +148,14 @@ export default async function ProductDetailPage(props: Props) {
                         </div>
 
                         <div className="mt-10 flex">
-                            <button
-                                type="button"
+                            <a
+                                href="https://zalo.me/0907970889"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="flex max-w-xs flex-1 items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50 sm:w-full"
                             >
                                 Liên hệ đặt hàng
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>

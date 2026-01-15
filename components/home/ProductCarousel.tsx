@@ -146,7 +146,7 @@ export default function ProductCarousel() {
                 {/* View All Button */}
                 <div className="text-center mt-12">
                     <Link
-                        href="/admin/products"
+                        href="/san-pham"
                         className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-red-600 text-white text-base font-bold rounded-full shadow-lg shadow-red-600/30 hover:bg-red-700 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 uppercase tracking-wider"
                     >
                         <span>Xem tất cả sản phẩm</span>
