@@ -48,9 +48,14 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "Vật Liệu Xây Dựng TÂN ĐẠI PHÁT",
     description: "Cửa hàng vật liệu xây dựng uy tín chất lượng - Sơn nước, gạch ốp lát và nhiều sản phẩm khác",
     icons: {
-      icon: settings['favicon'] || "/favicon.ico",
+      icon: [
+        { url: settings['favicon'] || "/favicon.ico" },
+        { url: "/icon.png", type: "image/png" },
+      ],
       shortcut: settings['favicon'] || "/favicon.ico",
-      apple: settings['favicon'] || "/favicon.ico",
+      apple: [
+        { url: "/apple-icon.png" },
+      ],
     }
   };
 }
