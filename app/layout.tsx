@@ -41,10 +41,21 @@ async function getSettings() {
   }
 }
 
-export const metadata: Metadata = {
-  title: "Vật Liệu Xây Dựng TÂN ĐẠI PHÁT",
-  description: "Cửa hàng vật liệu xây dựng uy tín chất lượng - Sơn nước, gạch ốp lát và nhiều sản phẩm khác",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings();
+
+  return {
+    title: "Vật Liệu Xây Dựng TÂN ĐẠI PHÁT",
+    description: "Cửa hàng vật liệu xây dựng uy tín chất lượng - Sơn nước, gạch ốp lát và nhiều sản phẩm khác",
+    icons: {
+      icon: settings['favicon'] || "/favicon.ico",
+      shortcut: settings['favicon'] || "/favicon.ico",
+      apple: settings['favicon'] || "/favicon.ico",
+    }
+  };
+}
+
+export const dynamic = "force-dynamic";
 
 // This is an async server component
 export default async function RootLayout({
@@ -52,14 +63,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const settings = await getSettings();
-  const favicon = settings['favicon'] || "/favicon.ico";
+  // Pass settings to layout wrapper if needed, or rely on client-side fetch there
 
   return (
     <html lang="vi" className="scroll-smooth" suppressHydrationWarning>
-      <head>
-        {settings['favicon'] && <link rel="icon" href={settings['favicon']} />}
-      </head>
       <body
         className={`${inter.variable} ${montserrat.variable} font-sans antialiased`}
         style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}
