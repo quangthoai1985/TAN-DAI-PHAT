@@ -4,9 +4,28 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
+/**
+ * =====================================================
+ * HƯỚNG DẪN KÍCH THƯỚC ẢNH BANNER
+ * =====================================================
+ * 
+ * ẢNH DESKTOP (url):
+ * - Tỷ lệ: 21:9 (ultrawide)
+ * - Kích thước khuyến nghị: 2520 x 1080 pixels
+ * - Dùng cho: Laptop, PC, màn hình lớn (≥768px)
+ * 
+ * ẢNH MOBILE (mobile_url):
+ * - Tỷ lệ: 4:3
+ * - Kích thước khuyến nghị: 1200 x 900 pixels
+ * - Dùng cho: Điện thoại, màn hình nhỏ (<768px)
+ * 
+ * =====================================================
+ */
+
 interface StoreImage {
     id: string;
     url: string;
+    mobile_url: string | null;
     display_order: number;
 }
 
@@ -49,7 +68,7 @@ export default function HeroSlideshow() {
 
     if (loading) {
         return (
-            <div className="relative h-[600px] md:h-[700px] lg:h-[800px] w-full bg-gray-900 flex items-center justify-center">
+            <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] md:aspect-[16/9] lg:aspect-[21/9] max-h-[90vh] bg-gradient-to-b from-red-600 to-red-700 flex items-center justify-center">
                 <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
             </div>
         );
@@ -114,61 +133,75 @@ export default function HeroSlideshow() {
     }
 
     return (
-        <section className="relative h-[600px] md:h-[700px] lg:h-[800px] w-full overflow-hidden bg-gray-900 group">
-            {/* Slides */}
-            {images.map((img, index) => (
-                <div
-                    key={img.id}
-                    className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0"
-                        }`}
-                >
-                    <img
-                        src={img.url}
-                        alt="Store Image"
-                        className={`w-full h-full object-cover transition-transform duration-[5000ms] ${index === currentIndex ? "scale-105" : "scale-100"
+        <section className="relative w-full overflow-hidden bg-gradient-to-b from-red-700 to-red-600 group">
+            {/* Container with responsive aspect ratio */}
+            <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] md:aspect-[16/9] lg:aspect-[21/9] xl:aspect-[24/9] max-h-[90vh]">
+                {/* Slides */}
+                {images.map((img, index) => (
+                    <div
+                        key={img.id}
+                        className={`absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center justify-center ${index === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0"
                             }`}
-                    />
-                </div>
-            ))}
+                    >
+                        {/* Responsive Picture Element */}
+                        <picture className="w-full h-full">
+                            {/* Mobile image (< 768px) - use mobile_url if available, fallback to url */}
+                            {img.mobile_url && (
+                                <source
+                                    media="(max-width: 767px)"
+                                    srcSet={img.mobile_url}
+                                />
+                            )}
+                            {/* Desktop image (>= 768px) */}
+                            <img
+                                src={img.url}
+                                alt="Store Banner"
+                                className={`w-full h-full object-contain transition-transform duration-[5000ms] ${index === currentIndex ? "scale-100" : "scale-100"
+                                    }`}
+                            />
+                        </picture>
+                    </div>
+                ))}
 
-            {/* Indicators */}
-            {images.length > 1 && (
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-3">
-                    {images.map((_, index) => (
+                {/* Indicators */}
+                {images.length > 1 && (
+                    <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-2 sm:gap-3">
+                        {images.map((_, index) => (
+                            <button
+                                key={index}
+                                onClick={() => setCurrentIndex(index)}
+                                className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${index === currentIndex
+                                    ? "bg-white w-6 sm:w-8"
+                                    : "bg-white/40 hover:bg-white/60"
+                                    }`}
+                                aria-label={`Go to slide ${index + 1}`}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {/* Arrows */}
+                {images.length > 1 && (
+                    <>
                         <button
-                            key={index}
-                            onClick={() => setCurrentIndex(index)}
-                            className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentIndex
-                                ? "bg-white w-8"
-                                : "bg-white/40 hover:bg-white/60"
-                                }`}
-                            aria-label={`Go to slide ${index + 1}`}
-                        />
-                    ))}
-                </div>
-            )}
-
-            {/* Arrows */}
-            {images.length > 1 && (
-                <>
-                    <button
-                        onClick={() => setCurrentIndex((prev) => (prev - 1 + images.length) % images.length)}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/20 text-white/70 hover:bg-black/40 hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                    >
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
-                    <button
-                        onClick={() => setCurrentIndex((prev) => (prev + 1) % images.length)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/20 text-white/70 hover:bg-black/40 hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                    >
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
-                </>
-            )}
+                            onClick={() => setCurrentIndex((prev) => (prev - 1 + images.length) % images.length)}
+                            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 p-1.5 sm:p-2 rounded-full bg-black/20 text-white/70 hover:bg-black/40 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                        >
+                            <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <button
+                            onClick={() => setCurrentIndex((prev) => (prev + 1) % images.length)}
+                            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 p-1.5 sm:p-2 rounded-full bg-black/20 text-white/70 hover:bg-black/40 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                        >
+                            <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </>
+                )}
+            </div>
         </section>
     );
 }
