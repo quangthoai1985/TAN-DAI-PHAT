@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import ProductGallery from "@/components/product/ProductGallery";
-import { Product, PaintSpecs, TileSpecs } from "@/types/product";
+import ProductCard from "@/components/product/ProductCard";
+import { Product, PaintSpecs, TileSpecs, ProductType } from "@/types/product";
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'edge';
@@ -30,6 +32,23 @@ async function getProduct(slug: string): Promise<Product | null> {
     }
 }
 
+async function getRelatedProducts(type: ProductType, currentSlug: string): Promise<Product[]> {
+    try {
+        const { data, error } = await supabase
+            .from("products")
+            .select("*")
+            .eq("type", type)
+            .neq("slug", currentSlug)
+            .limit(4);
+
+        if (error) throw error;
+        return (data || []) as Product[];
+    } catch (error) {
+        console.error("Error fetching related products:", error);
+        return [];
+    }
+}
+
 export default async function ProductDetailPage(props: Props) {
     const params = await props.params;
     const product = await getProduct(params.slug);
@@ -37,6 +56,8 @@ export default async function ProductDetailPage(props: Props) {
     if (!product) {
         notFound();
     }
+
+    const relatedProducts = await getRelatedProducts(product.type, product.slug);
 
     // Helper to render specs based on type
     const renderSpecs = () => {
@@ -159,6 +180,28 @@ export default async function ProductDetailPage(props: Props) {
                         </div>
                     </div>
                 </div>
+
+                {/* Related Products Section */}
+                {relatedProducts.length > 0 && (
+                    <div className="mt-16 sm:mt-24 border-t border-gray-200 pt-16">
+                        <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-6">
+                            Sản phẩm cùng loại
+                        </h2>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+                            {relatedProducts.map((relatedProduct) => (
+                                <ProductCard
+                                    key={relatedProduct.id}
+                                    slug={relatedProduct.slug}
+                                    code={relatedProduct.code}
+                                    name={relatedProduct.name}
+                                    images={relatedProduct.images}
+                                    price={relatedProduct.price}
+                                    type={relatedProduct.type}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
