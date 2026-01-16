@@ -276,7 +276,7 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
 
                     {/* Image */}
                     <div
-                        className="relative w-full h-full max-w-5xl max-h-[90vh] m-4"
+                        className="relative w-full h-[80vh] sm:h-[90vh] max-w-[95vw] sm:max-w-[90vw] m-4"
                         onClick={(e) => e.stopPropagation()}
                         onTouchEnd={handleDoubleTap}
                         style={{ animation: "scaleIn 0.3s ease-out forwards" }}
