@@ -40,6 +40,11 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const [existingImages, setExistingImages] = useState<ProductImage[]>(initialData?.images || []);
 
+    // Replacement state
+    const [replacements, setReplacements] = useState<Record<string, { file: File, previewUrl: string }>>({});
+    const [replacingImageId, setReplacingImageId] = useState<string | null>(null);
+    const replaceInputRef = useRef<HTMLInputElement>(null);
+
     // Update form data if initialData changes
     useEffect(() => {
         if (initialData) {
@@ -125,6 +130,36 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
         }
     };
 
+    const handleReplaceClick = (imageId: string) => {
+        setReplacingImageId(imageId);
+        replaceInputRef.current?.click();
+    };
+
+    const handleReplaceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file && replacingImageId) {
+            const previewUrl = URL.createObjectURL(file);
+            setReplacements(prev => ({
+                ...prev,
+                [replacingImageId]: { file, previewUrl }
+            }));
+        }
+        // Reset input
+        e.target.value = "";
+        setReplacingImageId(null);
+    };
+
+    const cancelReplacement = (imageId: string) => {
+        setReplacements(prev => {
+            const newReplacements = { ...prev };
+            if (newReplacements[imageId]) {
+                URL.revokeObjectURL(newReplacements[imageId].previewUrl);
+                delete newReplacements[imageId];
+            }
+            return newReplacements;
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -189,6 +224,28 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                         });
                     } else {
                         console.error("Failed to upload image:", result.error);
+                    }
+                }
+            }
+
+            // Process replacements
+            const replacementIds = Object.keys(replacements);
+            if (replacementIds.length > 0) {
+                for (const imageId of replacementIds) {
+                    const replacement = replacements[imageId];
+                    const result = await uploadProductImage(productId, replacement.file);
+
+                    if (result.success && result.url) {
+                        // Find the index of the image being replaced
+                        const index = finalImages.findIndex(img => img.id === imageId);
+                        if (index !== -1) {
+                            finalImages[index] = {
+                                ...finalImages[index],
+                                image_url: result.url,
+                            };
+                        }
+                    } else {
+                        console.error(`Failed to upload replacement for image ${imageId}:`, result.error);
                     }
                 }
             }
@@ -409,32 +466,79 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         {/* Existing Images */}
-                        {existingImages.map((img, index) => (
-                            <div key={img.id || index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
-                                <Image
-                                    src={img.image_url}
-                                    alt={`Current ${index + 1}`}
-                                    fill
-                                    className="object-cover"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => removeExistingImage(index)}
-                                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 z-10"
-                                    title="Xóa ảnh"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                                <div
-                                    className={`absolute bottom-0 left-0 right-0 p-2 text-xs font-semibold text-center cursor-pointer ${img.is_primary ? 'bg-indigo-600 text-white' : 'bg-gray-800/70 text-white hover:bg-gray-700'}`}
-                                    onClick={() => setPrimaryImage(index, false)}
-                                >
-                                    {img.is_primary ? 'Ảnh chính' : 'Đặt làm ảnh chính'}
+                        {existingImages.map((img, index) => {
+                            const replacement = replacements[img.id];
+                            const displayUrl = replacement ? replacement.previewUrl : img.image_url;
+
+                            return (
+                                <div key={img.id || index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 group">
+                                    <Image
+                                        src={displayUrl}
+                                        alt={`Product ${index + 1}`}
+                                        fill
+                                        className="object-cover"
+                                    />
+
+                                    {/* Actions */}
+                                    <div className="absolute top-2 right-2 flex gap-1 z-10">
+                                        {/* Replace Button */}
+                                        {!replacement ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleReplaceClick(img.id)}
+                                                className="p-1 bg-white/90 text-gray-700 rounded-full hover:bg-white shadow-sm"
+                                                title="Thay thế ảnh"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => cancelReplacement(img.id)}
+                                                className="p-1 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 shadow-sm"
+                                                title="Hủy thay thế"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        )}
+
+                                        {/* Delete Button */}
+                                        <button
+                                            type="button"
+                                            onClick={() => removeExistingImage(index)}
+                                            className="p-1 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-sm"
+                                            title="Xóa ảnh"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    {/* Primary Label/Button */}
+                                    <div
+                                        className={`absolute bottom-0 left-0 right-0 p-2 text-xs font-semibold text-center cursor-pointer transition-colors ${img.is_primary
+                                                ? 'bg-indigo-600 text-white'
+                                                : 'bg-gray-900/60 text-white hover:bg-gray-800'
+                                            }`}
+                                        onClick={() => setPrimaryImage(index, false)}
+                                    >
+                                        {img.is_primary ? 'Ảnh chính' : 'Đặt làm ảnh chính'}
+                                    </div>
+
+                                    {/* Replacement Indicator */}
+                                    {replacement && (
+                                        <span className="absolute top-2 left-2 px-2 py-0.5 bg-yellow-500 text-white text-xs rounded shadow-sm font-medium">
+                                            Thay thế
+                                        </span>
+                                    )}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
 
                         {/* New Image Previews */}
                         {previewUrls.map((preview, index) => (
@@ -482,6 +586,14 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                         accept="image/*"
                         multiple
                         onChange={handleImageChange}
+                        className="hidden"
+                    />
+                    {/* Hidden input for single file replacement */}
+                    <input
+                        ref={replaceInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleReplaceFileChange}
                         className="hidden"
                     />
                 </div>
