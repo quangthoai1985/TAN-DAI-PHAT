@@ -1,13 +1,15 @@
-import { TableHeader } from "@tiptap/extension-table-header";
+import * as TableHeaderPkg from "@tiptap/extension-table-header";
+// @ts-ignore
+const CustomTableHeaderBase = TableHeaderPkg.default || TableHeaderPkg.TableHeader || TableHeaderPkg;
 
-export const CustomTableHeader = TableHeader.extend({
+export const CustomTableHeader = CustomTableHeaderBase.extend({
     addAttributes() {
         return {
             ...this.parent?.(),
             verticalAlign: {
                 default: "top",
-                parseHTML: (element) => element.style.verticalAlign || "top",
-                renderHTML: (attributes) => {
+                parseHTML: (element: any) => element.style.verticalAlign || "top",
+                renderHTML: (attributes: any) => {
                     if (!attributes.verticalAlign || attributes.verticalAlign === "top") {
                         return {};
                     }

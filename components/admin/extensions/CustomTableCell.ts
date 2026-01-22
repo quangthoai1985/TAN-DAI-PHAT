@@ -1,4 +1,6 @@
-import { TableCell } from "@tiptap/extension-table-cell";
+import * as TableCellPkg from "@tiptap/extension-table-cell";
+// @ts-ignore
+const TableCell = TableCellPkg.default || TableCellPkg.TableCell || TableCellPkg;
 
 export type VerticalAlign = "top" | "middle" | "bottom";
 
@@ -16,8 +18,8 @@ export const CustomTableCell = TableCell.extend({
             ...this.parent?.(),
             verticalAlign: {
                 default: "top",
-                parseHTML: (element) => element.style.verticalAlign || "top",
-                renderHTML: (attributes) => {
+                parseHTML: (element: any) => element.style.verticalAlign || "top",
+                renderHTML: (attributes: any) => {
                     if (!attributes.verticalAlign || attributes.verticalAlign === "top") {
                         return {};
                     }
@@ -34,7 +36,7 @@ export const CustomTableCell = TableCell.extend({
             ...this.parent?.(),
             setCellVerticalAlign:
                 (align: VerticalAlign) =>
-                    ({ chain }) => {
+                    ({ chain }: any) => {
                         return chain()
                             .updateAttributes("tableCell", { verticalAlign: align })
                             .updateAttributes("tableHeader", { verticalAlign: align })

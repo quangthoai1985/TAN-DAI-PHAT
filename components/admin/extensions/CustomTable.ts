@@ -1,4 +1,6 @@
-import { Table } from "@tiptap/extension-table";
+import * as TablePkg from "@tiptap/extension-table";
+// @ts-ignore
+const Table = TablePkg.default || TablePkg.Table || TablePkg;
 
 export type BorderWidth = "none" | "thin" | "medium" | "thick";
 
@@ -23,14 +25,14 @@ export const CustomTable = Table.extend({
             ...this.parent?.(),
             borderWidth: {
                 default: "thin",
-                parseHTML: (element) => {
+                parseHTML: (element: any) => {
                     const border = element.style.borderWidth || element.getAttribute("data-border-width");
                     if (border === "0" || border === "0px") return "none";
                     if (border === "2px") return "medium";
                     if (border === "3px") return "thick";
                     return "thin";
                 },
-                renderHTML: (attributes) => {
+                renderHTML: (attributes: any) => {
                     const width = borderWidthMap[attributes.borderWidth as BorderWidth] || "1px";
                     return {
                         "data-border-width": attributes.borderWidth,
@@ -46,7 +48,7 @@ export const CustomTable = Table.extend({
             ...this.parent?.(),
             setTableBorderWidth:
                 (width: BorderWidth) =>
-                    ({ chain }) => {
+                    ({ chain }: any) => {
                         return chain().updateAttributes("table", { borderWidth: width }).run();
                     },
         };
