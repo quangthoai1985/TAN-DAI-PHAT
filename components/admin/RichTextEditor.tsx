@@ -259,6 +259,18 @@ export default function RichTextEditor({
 
                 <div className="w-px h-6 bg-gray-300 mx-1" />
 
+                {/* Horizontal Rule */}
+                <MenuButton
+                    onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                    title="Dấu cách đoạn (Horizontal Rule)"
+                >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M4 11h16v2H4z" />
+                    </svg>
+                </MenuButton>
+
+                <div className="w-px h-6 bg-gray-300 mx-1" />
+
                 {/* Image */}
                 <MenuButton
                     onClick={() => fileInputRef.current?.click()}
@@ -446,6 +458,11 @@ export default function RichTextEditor({
                     padding-left: 1rem;
                     margin: 1rem 0;
                     color: #6b7280;
+                }
+                .ProseMirror hr {
+                    border: none;
+                    border-top: 2px solid #e5e7eb;
+                    margin: 2rem 0;
                 }
                 /* Table styles */
                 .ProseMirror table {
