@@ -201,13 +201,22 @@ export default function AdminDashboard() {
                 <CardContent>
                     <div className="flex flex-wrap gap-4">
                         <Link
-                            href="/admin/products/new"
-                            className="group inline-flex items-center justify-center gap-3 h-12 px-6 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl font-semibold text-sm shadow-md hover:from-red-700 hover:to-red-800 hover:shadow-lg hover:scale-105 transition-all duration-300 whitespace-nowrap"
+                            href="/admin/products/new?type=PAINT"
+                            className="group inline-flex items-center justify-center gap-3 h-12 px-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold text-sm shadow-md hover:from-blue-700 hover:to-blue-800 hover:shadow-lg hover:scale-105 transition-all duration-300 whitespace-nowrap"
                         >
                             <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                             </svg>
-                            <span>Thêm sản phẩm mới</span>
+                            <span>Thêm nước sơn</span>
+                        </Link>
+                        <Link
+                            href="/admin/products/new?type=TILE"
+                            className="group inline-flex items-center justify-center gap-3 h-12 px-6 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl font-semibold text-sm shadow-md hover:from-amber-600 hover:to-amber-700 hover:shadow-lg hover:scale-105 transition-all duration-300 whitespace-nowrap"
+                        >
+                            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                            </svg>
+                            <span>Thêm gạch</span>
                         </Link>
                         <Link
                             href="/admin/products"

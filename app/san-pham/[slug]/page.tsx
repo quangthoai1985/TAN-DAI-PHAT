@@ -181,6 +181,21 @@ export default async function ProductDetailPage(props: Props) {
                     </div>
                 </div>
 
+                {/* Product Detail Content (Rich Text) */}
+                {product.content && (
+                    <div className="mt-16 sm:mt-24">
+                        <div className="border-b border-gray-200 pb-5 mb-8">
+                            <h2 className="text-2xl font-bold tracking-tight text-gray-900">
+                                Thông tin chi tiết
+                            </h2>
+                        </div>
+                        <div
+                            className="prose prose-lg prose-blue max-w-none prose-img:rounded-xl prose-img:shadow-sm"
+                            dangerouslySetInnerHTML={{ __html: product.content }}
+                        />
+                    </div>
+                )}
+
                 {/* Related Products Section */}
                 {relatedProducts.length > 0 && (
                     <div className="mt-16 sm:mt-24 border-t border-gray-200 pt-16">

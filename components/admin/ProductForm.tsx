@@ -3,16 +3,28 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { Product, ProductType, PaintSpecs, TileSpecs, ProductImage } from "@/types/product";
 import { supabase } from "@/lib/supabase";
 import { uploadProductImage } from "@/lib/storage";
 
+// Dynamic import for RichTextEditor (client-only)
+const RichTextEditor = dynamic(() => import("./RichTextEditor"), {
+    ssr: false,
+    loading: () => (
+        <div className="border border-gray-300 rounded-lg p-4 min-h-[200px] flex items-center justify-center">
+            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-indigo-600"></div>
+        </div>
+    ),
+});
+
 interface ProductFormProps {
     initialData?: Product;
     isEditing?: boolean;
+    defaultType?: ProductType;
 }
 
-export default function ProductForm({ initialData, isEditing = false }: ProductFormProps) {
+export default function ProductForm({ initialData, isEditing = false, defaultType = "PAINT" }: ProductFormProps) {
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -22,7 +34,7 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
         name: initialData?.name || "",
         slug: initialData?.slug || "",
         description: initialData?.description || "",
-        type: initialData?.type || ("PAINT" as ProductType),
+        type: initialData?.type || defaultType,
         price: initialData?.price?.toString() || "",
         // Paint specs
         volume: (initialData?.specs as PaintSpecs)?.volume || "",
@@ -45,6 +57,9 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
     const [replacingImageId, setReplacingImageId] = useState<string | null>(null);
     const replaceInputRef = useRef<HTMLInputElement>(null);
 
+    // Rich text content state
+    const [content, setContent] = useState(initialData?.content || "");
+
     // Update form data if initialData changes
     useEffect(() => {
         if (initialData) {
@@ -65,6 +80,7 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                 thickness: (initialData.specs as TileSpecs)?.thickness || "",
             });
             setExistingImages(initialData.images || []);
+            setContent(initialData.content || "");
         }
     }, [initialData]);
 
@@ -185,6 +201,7 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                 name: formData.name,
                 slug: formData.slug,
                 description: formData.description,
+                content: content,
                 type: formData.type,
                 price: formData.price ? Number(formData.price) : null,
                 specs,
@@ -459,6 +476,22 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                 )}
             </div>
 
+            {/* Rich Content Editor */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                    Thông tin sản phẩm
+                </h2>
+                <p className="text-sm text-gray-500 mb-4">
+                    Mô tả chi tiết về sản phẩm, bao gồm đặc điểm, công dụng, hướng dẫn sử dụng...
+                </p>
+                <RichTextEditor
+                    content={content}
+                    onChange={setContent}
+                    productId={initialData?.id}
+                    placeholder="Nhập nội dung mô tả chi tiết sản phẩm..."
+                />
+            </div>
+
             {/* Images */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Hình ảnh sản phẩm</h2>
@@ -522,8 +555,8 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                                     {/* Primary Label/Button */}
                                     <div
                                         className={`absolute bottom-0 left-0 right-0 p-2 text-xs font-semibold text-center cursor-pointer transition-colors ${img.is_primary
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'bg-gray-900/60 text-white hover:bg-gray-800'
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'bg-gray-900/60 text-white hover:bg-gray-800'
                                             }`}
                                         onClick={() => setPrimaryImage(index, false)}
                                     >

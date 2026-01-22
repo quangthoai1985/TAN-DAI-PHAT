@@ -27,6 +27,7 @@ export interface Product {
     name: string;
     slug: string;
     description?: string;
+    content?: string;  // Rich HTML content from editor
     category_id?: string;
     type: ProductType;
     price?: number;

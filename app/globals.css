@@ -1,4 +1,33 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Rich Text Styles */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  --table-border-width: 1px;
+}
+
+.prose th,
+.prose td {
+  border: var(--table-border-width, 1px) solid #e5e7eb;
+  padding: 0.5em 0.75em;
+}
+
+.prose th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  text-align: left;
+}
+
+.prose img {
+  border-radius: 0.5rem;
+  margin: 1.5em auto;
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
 
 /* ========================================
    SHADCN-STYLE DESIGN SYSTEM
