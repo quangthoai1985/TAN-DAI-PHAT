@@ -89,9 +89,14 @@ export default function RichTextEditor({
     // Sync external content changes
     useEffect(() => {
         if (editor && content !== editor.getHTML()) {
+            // Verify content sync
             editor.commands.setContent(content || "");
         }
     }, [content, editor]);
+
+    useEffect(() => {
+        console.log("RichTextEditor initialized");
+    }, []);
 
     const handleImageUpload = useCallback(async (file: File) => {
         if (!editor) return;

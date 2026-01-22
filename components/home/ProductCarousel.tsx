@@ -106,30 +106,33 @@ export default function ProductCarousel() {
                                     key={product.id}
                                     className="flex-none w-[280px] sm:w-[320px] snap-center bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 group/card"
                                 >
-                                    {/* Image */}
-                                    <div className="relative h-[280px] sm:h-[320px] w-full overflow-hidden bg-gray-100">
-                                        <Image
-                                            src={primaryImage}
-                                            alt={product.name}
-                                            fill
-                                            className="object-cover transition-transform duration-500 group-hover/card:scale-110"
-                                        />
-                                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-gray-800 uppercase tracking-wider shadow-sm">
-                                            {categoryName}
+                                    <Link href={`/san-pham/${product.slug}`} className="block">
+                                        {/* Image */}
+                                        <div className="relative h-[280px] sm:h-[320px] w-full overflow-hidden bg-gray-100">
+                                            <Image
+                                                src={primaryImage}
+                                                alt={product.name}
+                                                fill
+                                                className="object-cover transition-transform duration-500 group-hover/card:scale-110"
+                                            />
+                                            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-gray-800 uppercase tracking-wider shadow-sm">
+                                                {categoryName}
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    {/* Content */}
-                                    <div className="p-6">
-                                        <h3
-                                            className="text-lg font-bold text-gray-900 line-clamp-2 min-h-[3.5rem] mb-4 group-hover/card:text-red-600 transition-colors"
-                                            style={{ fontFamily: "var(--font-montserrat)" }}
-                                        >
-                                            <Link href={`/san-pham/${product.slug}`} className="hover:underline decoration-red-600/30 underline-offset-4">
+                                        {/* Content - Title only */}
+                                        <div className="p-6 pb-0">
+                                            <h3
+                                                className="text-lg font-bold text-gray-900 line-clamp-2 min-h-[3.5rem] mb-4 group-hover/card:text-red-600 transition-colors"
+                                                style={{ fontFamily: "var(--font-montserrat)" }}
+                                            >
                                                 {product.name}
-                                            </Link>
-                                        </h3>
+                                            </h3>
+                                        </div>
+                                    </Link>
 
+                                    {/* Action Button */}
+                                    <div className="px-6 pb-6">
                                         <Link
                                             href="tel:0907970889"
                                             className="block w-full py-3 text-center bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors uppercase text-sm tracking-wide shadow-red-200 shadow-lg transform active:scale-95 duration-200"
