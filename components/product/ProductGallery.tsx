@@ -28,10 +28,26 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
     const [scale, setScale] = useState(1);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isAnimating, setIsAnimating] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
     const lightboxRef = useRef<HTMLDivElement>(null);
     const lastTouchDistance = useRef<number | null>(null);
 
     const activeImage = sortedImages[activeIndex];
+
+    // Auto-slideshow functionality
+    useEffect(() => {
+        // Only autoplay if:
+        // 1. There is more than 1 image
+        // 2. Not currently hovering over the gallery
+        // 3. Lightbox is not open
+        if (sortedImages.length <= 1 || isHovered || isLightboxOpen) return;
+
+        const interval = setInterval(() => {
+            setActiveIndex((prev) => (prev + 1) % sortedImages.length);
+        }, 2000); // Change image every 2 seconds
+
+        return () => clearInterval(interval);
+    }, [sortedImages.length, isHovered, isLightboxOpen]);
 
     // Keyboard navigation
     useEffect(() => {
@@ -160,6 +176,8 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                 <div
                     className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100 cursor-zoom-in group shadow-lg transition-shadow duration-300 hover:shadow-xl"
                     onClick={openLightbox}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
                 >
                     <Image
                         src={getImageUrl(activeImage.image_url, 'medium')}
