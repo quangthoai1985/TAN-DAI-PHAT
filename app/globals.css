@@ -29,6 +29,51 @@
   height: auto;
 }
 
+/* Responsive table for mobile - Stack vertical */
+@media (max-width: 767px) {
+  .prose table {
+    display: block;
+    width: 100%;
+  }
+
+  .prose table tbody {
+    display: block;
+  }
+
+  .prose table tr {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .prose table td {
+    display: block;
+    width: 100% !important;
+    border: none;
+    padding: 0.75rem;
+  }
+
+  /* Ô chứa hình ảnh - hiển thị đầy đủ */
+  .prose table td:has(img) {
+    padding: 0;
+  }
+
+  .prose table td img {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  /* Ẩn header nếu có */
+  .prose table thead {
+    display: none;
+  }
+}
+
 /* ========================================
    SHADCN-STYLE DESIGN SYSTEM
    ======================================== */

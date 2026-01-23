@@ -59,8 +59,8 @@ export default function Header({ logoUrl }: { logoUrl?: string }) {
                                 </div>
                             )}
                         </div>
-                        <div className="hidden sm:block">
-                            <p className="text-3xl font-bold text-red-600 tracking-tight leading-none" style={{ fontFamily: "var(--font-montserrat)" }}>
+                        <div>
+                            <p className="text-lg sm:text-2xl md:text-3xl font-bold text-red-600 tracking-tight leading-none" style={{ fontFamily: "var(--font-montserrat)" }}>
                                 TÂN ĐẠI PHÁT
                             </p>
                         </div>
