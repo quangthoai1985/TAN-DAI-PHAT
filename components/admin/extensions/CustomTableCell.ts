@@ -1,6 +1,4 @@
-import * as TableCellPkg from "@tiptap/extension-table-cell";
-// @ts-ignore
-const TableCell = TableCellPkg.default || TableCellPkg.TableCell || TableCellPkg;
+import { TableCell } from "@tiptap/extension-table-cell";
 
 export type VerticalAlign = "top" | "middle" | "bottom";
 

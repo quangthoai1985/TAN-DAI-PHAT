@@ -6,7 +6,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { Product, ProductType, PaintSpecs, TileSpecs, ProductImage } from "@/types/product";
 import { supabase } from "@/lib/supabase";
-import { uploadProductImage } from "@/lib/storage";
+import { uploadProductImage, deleteProductImage } from "@/lib/storage";
 
 // Dynamic import for RichTextEditor (client-only)
 const RichTextEditor = dynamic(() => import("./RichTextEditor"), {
@@ -51,6 +51,7 @@ export default function ProductForm({ initialData, isEditing = false, defaultTyp
     const [newImages, setNewImages] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const [existingImages, setExistingImages] = useState<ProductImage[]>(initialData?.images || []);
+    const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
 
     // Replacement state
     const [replacements, setReplacements] = useState<Record<string, { file: File, previewUrl: string }>>({});
@@ -132,7 +133,23 @@ export default function ProductForm({ initialData, isEditing = false, defaultTyp
 
     const removeExistingImage = (index: number) => {
         if (!confirm("Bạn có chắc muốn xóa ảnh này?")) return;
+
+        const imageToDelete = existingImages[index];
+        if (imageToDelete.image_url) {
+            setImagesToDelete(prev => [...prev, imageToDelete.image_url]);
+        }
+
         setExistingImages((prev) => prev.filter((_, i) => i !== index));
+
+        // Also remove from replacements if it was pending replacement
+        if (replacements[imageToDelete.id]) {
+            URL.revokeObjectURL(replacements[imageToDelete.id].previewUrl);
+            setReplacements(prev => {
+                const newReplacements = { ...prev };
+                delete newReplacements[imageToDelete.id];
+                return newReplacements;
+            });
+        }
     };
 
     const setPrimaryImage = (index: number, isNew: boolean) => {
@@ -179,6 +196,7 @@ export default function ProductForm({ initialData, isEditing = false, defaultTyp
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+        const urlsToDelete = [...imagesToDelete];
 
         try {
             const specs =
@@ -256,6 +274,11 @@ export default function ProductForm({ initialData, isEditing = false, defaultTyp
                         // Find the index of the image being replaced
                         const index = finalImages.findIndex(img => img.id === imageId);
                         if (index !== -1) {
+                            const oldImageUrl = finalImages[index].image_url;
+                            if (oldImageUrl) {
+                                urlsToDelete.push(oldImageUrl);
+                            }
+
                             finalImages[index] = {
                                 ...finalImages[index],
                                 image_url: result.url,
@@ -278,6 +301,19 @@ export default function ProductForm({ initialData, isEditing = false, defaultTyp
                 .eq("id", productId);
 
             if (imageUpdateError) throw imageUpdateError;
+
+            // Delete removed/replaced images from Storage
+            if (urlsToDelete.length > 0) {
+                await Promise.all(urlsToDelete.map(url => {
+                    const pathMatch = url.match(/product-images\/(.+)$/);
+                    if (pathMatch && pathMatch[1]) {
+                        // Remove URL parameters if any
+                        const cleanPath = pathMatch[1].split('?')[0];
+                        return deleteProductImage(cleanPath);
+                    }
+                    return Promise.resolve();
+                }));
+            }
 
             router.push("/admin/products");
             router.refresh();

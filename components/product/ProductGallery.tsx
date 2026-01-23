@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
+import { getOptimizedImageUrl } from "@/lib/storage";
 
 interface GalleryImage {
     id: string;
@@ -147,6 +148,11 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
         );
     }
 
+    // Use centralized helper
+    const getImageUrl = (url: string, variant: 'thumb' | 'medium' | 'full' = 'medium') => {
+        return getOptimizedImageUrl(url, variant);
+    };
+
     return (
         <>
             <div className="flex flex-col gap-3 sm:gap-4">
@@ -156,12 +162,19 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                     onClick={openLightbox}
                 >
                     <Image
-                        src={activeImage.image_url}
+                        src={getImageUrl(activeImage.image_url, 'medium')}
                         alt="Product image"
                         fill
                         className="object-contain transition-transform duration-500 ease-out group-hover:scale-105"
                         sizes="(max-width: 768px) 100vw, 60vw"
                         priority={activeImage.is_primary}
+                        onError={(e) => {
+                            // Fallback to original URL if variant doesn't exist (old images)
+                            const target = e.target as HTMLImageElement;
+                            if (target.src !== activeImage.image_url) {
+                                target.src = activeImage.image_url;
+                            }
+                        }}
                     />
                     {/* Hover overlay */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
@@ -199,11 +212,17 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                                 `}
                             >
                                 <Image
-                                    src={img.image_url}
+                                    src={getImageUrl(img.image_url, 'thumb')}
                                     alt="Thumbnail"
                                     fill
                                     className="object-cover"
                                     sizes="80px"
+                                    onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        if (target.src !== img.image_url) {
+                                            target.src = img.image_url;
+                                        }
+                                    }}
                                 />
                             </button>
                         ))}
@@ -282,7 +301,7 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                         style={{ animation: "scaleIn 0.3s ease-out forwards" }}
                     >
                         <Image
-                            src={activeImage.image_url}
+                            src={getImageUrl(activeImage.image_url, 'full')}
                             alt="Product image fullscreen"
                             fill
                             className="object-contain transition-transform duration-200"
@@ -292,6 +311,12 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                             sizes="100vw"
                             priority
                             unoptimized
+                            onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                if (target.src !== activeImage.image_url) {
+                                    target.src = activeImage.image_url;
+                                }
+                            }}
                         />
                     </div>
 

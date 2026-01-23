@@ -1,8 +1,6 @@
-import * as TableHeaderPkg from "@tiptap/extension-table-header";
-// @ts-ignore
-const CustomTableHeaderBase = TableHeaderPkg.default || TableHeaderPkg.TableHeader || TableHeaderPkg;
+import { TableHeader } from "@tiptap/extension-table-header";
 
-export const CustomTableHeader = CustomTableHeaderBase.extend({
+export const CustomTableHeader = TableHeader.extend({
     addAttributes() {
         return {
             ...this.parent?.(),

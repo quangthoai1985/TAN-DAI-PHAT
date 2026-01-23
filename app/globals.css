@@ -248,6 +248,18 @@
     }
   }
 
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
   @keyframes fadeInUp {
     from {
       opacity: 0;
@@ -363,6 +375,12 @@
 
   .animate-fade-in-down {
     animation: fadeInDown var(--transition-slow) var(--ease-out) forwards;
+  }
+
+  /* Page-level fade for route transitions */
+  .page-fade-in {
+    animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    will-change: opacity;
   }
 
   .animate-slide-in-left {

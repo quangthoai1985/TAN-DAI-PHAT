@@ -1,6 +1,4 @@
-import * as TablePkg from "@tiptap/extension-table";
-// @ts-ignore
-const Table = TablePkg.default || TablePkg.Table || TablePkg;
+import { Table } from "@tiptap/extension-table";
 
 export type BorderWidth = "none" | "thin" | "medium" | "thick";
 

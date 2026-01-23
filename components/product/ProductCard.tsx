@@ -1,7 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { getOptimizedImageUrl } from "@/lib/storage";
 import { ProductImage } from "@/types/product";
 import { CardInteractive } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +20,17 @@ interface ProductCardProps {
 export default function ProductCard({ slug, code, name, images, price, type }: ProductCardProps) {
     // Get primary image or first image
     const primaryImage = images?.find((img) => img.is_primary) || images?.[0];
-    const imageUrl = primaryImage?.image_url || "/placeholder-product.png";
+    const rawImageUrl = primaryImage?.image_url || "/placeholder-product.png";
+    // Use medium variant for product cards
+    const optimizedUrl = getOptimizedImageUrl(rawImageUrl, 'medium');
+
+    // Image source state for fallback
+    const [imgSrc, setImgSrc] = useState(optimizedUrl);
+
+    // Reset state when props change
+    useEffect(() => {
+        setImgSrc(getOptimizedImageUrl(rawImageUrl, 'medium'));
+    }, [rawImageUrl]);
 
     return (
         <Link href={`/san-pham/${slug}`} className="group block h-full">
@@ -26,11 +38,16 @@ export default function ProductCard({ slug, code, name, images, price, type }: P
                 {/* Image Container */}
                 <div className="relative aspect-square overflow-hidden bg-gray-50">
                     <Image
-                        src={imageUrl}
+                        src={imgSrc}
                         alt={name}
                         fill
                         className="object-cover transition-transform duration-500 ease-out group-hover:scale-110"
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        onError={() => {
+                            if (imgSrc !== rawImageUrl) {
+                                setImgSrc(rawImageUrl);
+                            }
+                        }}
                     />
                     {/* Overlay on hover */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

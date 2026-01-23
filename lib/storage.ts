@@ -90,7 +90,19 @@ export async function optimizeImage(
 }
 
 /**
- * Upload product image to Supabase Storage
+ * Image variants configuration for multi-resolution storage
+ */
+export const IMAGE_VARIANTS = {
+    thumb: { maxWidth: 400, maxHeight: 400, quality: 0.80 },
+    medium: { maxWidth: 1200, maxHeight: 1200, quality: 0.85 },
+    full: { maxWidth: 2400, maxHeight: 2400, quality: 0.92 },
+} as const;
+
+export type ImageVariant = keyof typeof IMAGE_VARIANTS;
+
+/**
+ * Upload product image to Supabase Storage with multi-resolution variants
+ * Creates 3 versions: thumb (400px), medium (1200px), full (2400px)
  */
 export async function uploadProductImage(
     productId: string,
@@ -99,43 +111,81 @@ export async function uploadProductImage(
         optimize?: boolean;
         isPrimary?: boolean;
     } = {}
-): Promise<UploadResult> {
+): Promise<UploadResult & { variants?: Record<ImageVariant, string> }> {
     const { optimize = true, isPrimary = false } = options;
 
     try {
-        // Prepare file
-        let uploadData: Blob | File = file;
-        let fileName = generateFileName(file.name);
+        // Generate base filename
+        const timestamp = Date.now();
+        const randomStr = Math.random().toString(36).substring(7);
+        const baseFileName = isPrimary ? `main_${timestamp}_${randomStr}` : `${timestamp}_${randomStr}`;
 
-        // Optimize if requested (client-side only)
+        const variants: Record<string, string> = {};
+        let mediumUrl = '';
+
+        // Upload all variants if optimizing
         if (optimize && typeof window !== 'undefined') {
-            try {
-                uploadData = await optimizeImage(file, {
-                    maxWidth: 1200,
-                    maxHeight: 1200,
-                    quality: 0.85,
-                    format: 'webp',
-                });
-                fileName = fileName.replace(/\.[^.]+$/, '.webp');
-            } catch (e) {
-                console.warn('Image optimization failed, uploading original:', e);
+            for (const [variant, config] of Object.entries(IMAGE_VARIANTS)) {
+                try {
+                    const optimizedBlob = await optimizeImage(file, {
+                        maxWidth: config.maxWidth,
+                        maxHeight: config.maxHeight,
+                        quality: config.quality,
+                        format: 'webp',
+                    });
+
+                    const variantFileName = `${baseFileName}_${variant}.webp`;
+                    const filePath = `${productId}/${variantFileName}`;
+
+                    const { data, error } = await supabase.storage
+                        .from(BUCKET_NAME)
+                        .upload(filePath, optimizedBlob, {
+                            cacheControl: '31536000', // 1 year cache for optimized images
+                            upsert: true,
+                            contentType: 'image/webp',
+                        });
+
+                    if (error) {
+                        console.error(`Failed to upload ${variant} variant:`, error);
+                        continue;
+                    }
+
+                    const { data: urlData } = supabase.storage
+                        .from(BUCKET_NAME)
+                        .getPublicUrl(data.path);
+
+                    variants[variant] = urlData.publicUrl;
+
+                    // Use medium as the default URL
+                    if (variant === 'medium') {
+                        mediumUrl = urlData.publicUrl;
+                    }
+                } catch (e) {
+                    console.warn(`Image optimization failed for ${variant}:`, e);
+                }
+            }
+
+            // If we have at least medium, return success
+            if (mediumUrl) {
+                return {
+                    success: true,
+                    path: `${productId}/${baseFileName}`,
+                    url: mediumUrl,
+                    variants: variants as Record<ImageVariant, string>,
+                };
             }
         }
 
-        // If primary, name it 'main'
-        if (isPrimary) {
-            fileName = `main.${fileName.split('.').pop()}`;
-        }
-
+        // Fallback: upload original file if optimization failed
+        const fileName = `${baseFileName}.${file.name.split('.').pop()?.toLowerCase() || 'jpg'}`;
         const filePath = `${productId}/${fileName}`;
 
-        // Upload to Supabase Storage
         const { data, error } = await supabase.storage
             .from(BUCKET_NAME)
-            .upload(filePath, uploadData, {
+            .upload(filePath, file, {
                 cacheControl: '3600',
                 upsert: true,
-                contentType: uploadData.type || 'image/webp',
+                contentType: file.type || 'image/jpeg',
             });
 
         if (error) {
@@ -145,7 +195,6 @@ export async function uploadProductImage(
             };
         }
 
-        // Get public URL
         const { data: urlData } = supabase.storage
             .from(BUCKET_NAME)
             .getPublicUrl(data.path);
@@ -239,14 +288,47 @@ export async function deleteAllProductImages(productId: string): Promise<{
 /**
  * Delete product image from Supabase Storage
  */
+/**
+ * Delete product image from Supabase Storage (including all variants)
+ */
 export async function deleteProductImage(imagePath: string): Promise<{
     success: boolean;
     error?: string;
 }> {
     try {
+        // Prepare paths for all potential variants
+        // imagePath is likely .../name_medium.webp or .../name.ext
+
+        // Try to identify the base name
+        // Patterns: name_medium.webp, name_thumb.webp, name_full.webp, or just name.ext
+        let basePath = imagePath;
+
+        // Remove known suffixes if present
+        if (imagePath.includes('_medium.webp')) basePath = imagePath.replace('_medium.webp', '');
+        else if (imagePath.includes('_thumb.webp')) basePath = imagePath.replace('_thumb.webp', '');
+        else if (imagePath.includes('_full.webp')) basePath = imagePath.replace('_full.webp', '');
+        else if (imagePath.includes('.webp')) basePath = imagePath.replace('.webp', '');
+        else {
+            // Remove extension
+            basePath = imagePath.replace(/\.[^/.]+$/, "");
+        }
+
+        const pathsToDelete = [
+            imagePath, // The original request path
+            `${basePath}_thumb.webp`,
+            `${basePath}_medium.webp`,
+            `${basePath}_full.webp`,
+            `${basePath}.jpg`, // Legacy/Fallback
+            `${basePath}.png`, // Legacy/Fallback
+            `${basePath}.webp` // Legacy/Fallback
+        ];
+
+        // Remove duplicates
+        const uniquePaths = [...new Set(pathsToDelete)];
+
         const { error } = await supabase.storage
             .from(BUCKET_NAME)
-            .remove([imagePath]);
+            .remove(uniquePaths);
 
         if (error) {
             return {
@@ -273,4 +355,24 @@ export function getPublicUrl(imagePath: string): string {
         .getPublicUrl(imagePath);
 
     return data.publicUrl;
+}
+
+/**
+ * Get optimized image URL for a given variant
+ */
+export function getOptimizedImageUrl(url: string, variant: 'thumb' | 'medium' | 'full' = 'medium'): string {
+    if (!url) return '';
+
+    // Check if url is a placeholder or external
+    if (url.startsWith('/') || !url.startsWith('http')) return url;
+
+    // Remove existing suffix if present to get base
+    let baseUrl = url;
+    if (url.includes('_medium.webp')) baseUrl = url.replace('_medium.webp', '');
+    else if (url.includes('_thumb.webp')) baseUrl = url.replace('_thumb.webp', '');
+    else if (url.includes('_full.webp')) baseUrl = url.replace('_full.webp', '');
+    else if (url.includes('.webp')) baseUrl = url.replace('.webp', '');
+    else baseUrl = url.replace(/\.[^/.]+$/, "");
+
+    return `${baseUrl}_${variant}.webp`;
 }

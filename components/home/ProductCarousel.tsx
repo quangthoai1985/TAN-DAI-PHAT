@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { Product } from "@/types/product";
+import { getOptimizedImageUrl } from "@/lib/storage";
+import ProductCarouselItem from "./ProductCarouselItem";
 
 export default function ProductCarousel() {
     const [products, setProducts] = useState<Product[]>([]);
@@ -19,18 +21,20 @@ export default function ProductCarousel() {
         try {
             const { data, error } = await supabase
                 .from("products")
-                .select("*")
+                .select("id, name, slug, images, type") // Optimize selection
                 .order("created_at", { ascending: false })
                 .limit(8);
 
             if (error) throw error;
-            if (data) setProducts(data);
+            if (data) setProducts(data as unknown as Product[]);
         } catch (error) {
             console.error("Error fetching products:", error);
         } finally {
             setLoading(false);
         }
     };
+
+
 
     const scroll = (direction: "left" | "right") => {
         if (scrollContainerRef.current) {
@@ -97,52 +101,9 @@ export default function ProductCarousel() {
                         className="flex overflow-x-auto gap-6 pb-8 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0"
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
-                        {products.map((product) => {
-                            const primaryImage = product.images?.find((img: any) => img.is_primary)?.image_url || product.images?.[0]?.image_url || "/placeholder-image.jpg";
-                            const categoryName = product.type === "PAINT" ? "NƯỚC SƠN" : "GẠCH ỐP LÁT";
-
-                            return (
-                                <div
-                                    key={product.id}
-                                    className="flex-none w-[280px] sm:w-[320px] snap-center bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 group/card"
-                                >
-                                    <Link href={`/san-pham/${product.slug}`} className="block">
-                                        {/* Image */}
-                                        <div className="relative h-[280px] sm:h-[320px] w-full overflow-hidden bg-gray-100">
-                                            <Image
-                                                src={primaryImage}
-                                                alt={product.name}
-                                                fill
-                                                className="object-cover transition-transform duration-500 group-hover/card:scale-110"
-                                            />
-                                            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-gray-800 uppercase tracking-wider shadow-sm">
-                                                {categoryName}
-                                            </div>
-                                        </div>
-
-                                        {/* Content - Title only */}
-                                        <div className="p-6 pb-0">
-                                            <h3
-                                                className="text-lg font-bold text-gray-900 line-clamp-2 min-h-[3.5rem] mb-4 group-hover/card:text-red-600 transition-colors"
-                                                style={{ fontFamily: "var(--font-montserrat)" }}
-                                            >
-                                                {product.name}
-                                            </h3>
-                                        </div>
-                                    </Link>
-
-                                    {/* Action Button */}
-                                    <div className="px-6 pb-6">
-                                        <Link
-                                            href="tel:0907970889"
-                                            className="block w-full py-3 text-center bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors uppercase text-sm tracking-wide shadow-red-200 shadow-lg transform active:scale-95 duration-200"
-                                        >
-                                            Liên hệ
-                                        </Link>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        {products.map((product) => (
+                            <ProductCarouselItem key={product.id} product={product} />
+                        ))}
                     </div>
                 </div>
 

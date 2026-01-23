@@ -3,9 +3,7 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
-import * as TableRowPkg from "@tiptap/extension-table-row";
-// @ts-ignore
-const TableRow = TableRowPkg.default || TableRowPkg.TableRow || TableRowPkg;
+import { TableRow } from "@tiptap/extension-table-row";
 import TextAlign from "@tiptap/extension-text-align";
 import { CustomTable, BorderWidth } from "./extensions/CustomTable";
 import { CustomTableCell, VerticalAlign } from "./extensions/CustomTableCell";
