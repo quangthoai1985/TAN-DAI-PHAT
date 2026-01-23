@@ -291,6 +291,7 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                             }}
                             sizes="100vw"
                             priority
+                            unoptimized
                         />
                     </div>
 
