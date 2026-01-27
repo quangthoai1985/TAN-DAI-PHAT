@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import ProductGallery from "@/components/product/ProductGallery";
 import ProductCard from "@/components/product/ProductCard";
+import ProductQRCodeWrapper from "@/components/product/ProductQRCodeWrapper";
 import { Product, PaintSpecs, TileSpecs, ProductType } from "@/types/product";
 
 export const dynamic = 'force-dynamic';
@@ -168,7 +169,7 @@ export default async function ProductDetailPage(props: Props) {
                             </div>
                         </div>
 
-                        <div className="mt-10 flex">
+                        <div className="mt-10 flex flex-col gap-3">
                             <a
                                 href="https://zalo.me/0907970889"
                                 target="_blank"
@@ -177,6 +178,14 @@ export default async function ProductDetailPage(props: Props) {
                             >
                                 Liên hệ đặt hàng
                             </a>
+
+                            {/* QRCode Download Button */}
+                            <ProductQRCodeWrapper
+                                slug={product.slug}
+                                productName={product.name}
+                                productCode={product.code}
+                                images={product.images}
+                            />
                         </div>
                     </div>
                 </div>
