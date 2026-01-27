@@ -29,6 +29,7 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isAnimating, setIsAnimating] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const [isFading, setIsFading] = useState(false);
     const lightboxRef = useRef<HTMLDivElement>(null);
     const lastTouchDistance = useRef<number | null>(null);
 
@@ -43,7 +44,14 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
         if (sortedImages.length <= 1 || isHovered || isLightboxOpen) return;
 
         const interval = setInterval(() => {
-            setActiveIndex((prev) => (prev + 1) % sortedImages.length);
+            // Trigger fade out
+            setIsFading(true);
+            // Change image after fade out, then fade in
+            setTimeout(() => {
+                setActiveIndex((prev) => (prev + 1) % sortedImages.length);
+                // Small delay to allow React to update, then fade in
+                setTimeout(() => setIsFading(false), 50);
+            }, 300); // 300ms for fade out
         }, 2000); // Change image every 2 seconds
 
         return () => clearInterval(interval);
@@ -183,7 +191,7 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                         src={getImageUrl(activeImage.image_url, 'medium')}
                         alt="Product image"
                         fill
-                        className="object-contain transition-transform duration-500 ease-out group-hover:scale-105"
+                        className={`object-contain transition-all duration-300 ease-in-out group-hover:scale-105 ${isFading ? 'opacity-0' : 'opacity-100'}`}
                         sizes="(max-width: 768px) 100vw, 60vw"
                         priority={activeImage.is_primary}
                         onError={(e) => {
@@ -338,8 +346,51 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                         />
                     </div>
 
-                    {/* Zoom hint on mobile */}
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm md:hidden">
+                    {/* Lightbox Thumbnails */}
+                    {sortedImages.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2 px-4 py-3 bg-black/40 backdrop-blur-sm rounded-2xl max-w-[90vw] overflow-x-auto scrollbar-hide">
+                            {sortedImages.map((img, index) => (
+                                <button
+                                    key={img.id}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveIndex(index);
+                                        setScale(1);
+                                        setPosition({ x: 0, y: 0 });
+                                    }}
+                                    className={`
+                                        relative flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden
+                                        transition-all duration-200 ease-out
+                                        ${activeIndex === index
+                                            ? "ring-2 ring-white ring-offset-2 ring-offset-black/50 scale-110 shadow-lg"
+                                            : "opacity-50 hover:opacity-80 border border-white/20"
+                                        }
+                                    `}
+                                >
+                                    <Image
+                                        src={getImageUrl(img.image_url, 'thumb')}
+                                        alt={`Thumbnail ${index + 1}`}
+                                        fill
+                                        className="object-cover"
+                                        sizes="56px"
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            if (target.src !== img.image_url) {
+                                                target.src = img.image_url;
+                                            }
+                                        }}
+                                    />
+                                    {/* Active indicator dot */}
+                                    {activeIndex === index && (
+                                        <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full shadow-lg" />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Zoom hint on mobile - adjusted position */}
+                    <div className="absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm md:hidden">
                         Chạm 2 lần để phóng to
                     </div>
                 </div>

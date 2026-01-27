@@ -8,8 +8,9 @@ import TextAlign from "@tiptap/extension-text-align";
 import { CustomTable, BorderWidth } from "./extensions/CustomTable";
 import { CustomTableCell, VerticalAlign } from "./extensions/CustomTableCell";
 import { CustomTableHeader } from "./extensions/CustomTableHeader";
-import { useCallback, useRef, useEffect, useState } from "react";
+import { useCallback, useRef, useEffect, useState, useMemo } from "react";
 import { uploadProductImage } from "@/lib/storage";
+import { createPortal } from "react-dom";
 
 interface RichTextEditorProps {
     content: string;
@@ -52,6 +53,11 @@ export default function RichTextEditor({
     placeholder = "Nhập nội dung mô tả chi tiết sản phẩm...",
 }: RichTextEditorProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const floatingFileInputRef = useRef<HTMLInputElement>(null);
+    const editorContainerRef = useRef<HTMLDivElement>(null);
+    const [floatingToolbarPos, setFloatingToolbarPos] = useState<{ top: number; left: number } | null>(null);
+    const [showFloatingToolbar, setShowFloatingToolbar] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
     const editor = useEditor({
         extensions: [
@@ -62,7 +68,7 @@ export default function RichTextEditor({
             }),
             Image.configure({
                 inline: false,
-                allowBase64: true,
+                allowBase64: false, // Tắt Base64 để tiết kiệm dung lượng database
             }),
             CustomTable.configure({
                 resizable: true,
@@ -84,6 +90,10 @@ export default function RichTextEditor({
         onUpdate: ({ editor }) => {
             onChange(editor.getHTML());
         },
+        onSelectionUpdate: ({ editor }) => {
+            // Update floating toolbar position when selection changes
+            updateFloatingToolbarPosition();
+        },
     });
 
     // Sync external content changes
@@ -98,29 +108,94 @@ export default function RichTextEditor({
         console.log("RichTextEditor initialized");
     }, []);
 
+    // Update floating toolbar position
+    const updateFloatingToolbarPosition = useCallback(() => {
+        if (!editor || !editorContainerRef.current) return;
+
+        const { view } = editor;
+        const { from } = view.state.selection;
+
+        // Check if we're in a table or have a non-empty selection
+        const isInTable = editor.isActive('table');
+        const hasSelection = !view.state.selection.empty;
+
+        if (!isInTable && !hasSelection) {
+            setShowFloatingToolbar(false);
+            return;
+        }
+
+        try {
+            const coords = view.coordsAtPos(from);
+            const containerRect = editorContainerRef.current.getBoundingClientRect();
+
+            // Calculate position relative to the editor container
+            const top = coords.top - containerRect.top - 50; // 50px above cursor
+            const left = coords.left - containerRect.left;
+
+            // Only show if position is valid and within bounds
+            if (top > -40 && left > 0) {
+                setFloatingToolbarPos({ top: Math.max(0, top), left: Math.min(left, containerRect.width - 200) });
+                setShowFloatingToolbar(true);
+            }
+        } catch (e) {
+            // Coords might fail on certain selections
+            setShowFloatingToolbar(false);
+        }
+    }, [editor]);
+
+    // Hide floating toolbar on scroll within editor
+    useEffect(() => {
+        const handleScroll = () => {
+            updateFloatingToolbarPosition();
+        };
+
+        const container = editorContainerRef.current;
+        if (container) {
+            container.addEventListener('scroll', handleScroll, true);
+            return () => container.removeEventListener('scroll', handleScroll, true);
+        }
+    }, [updateFloatingToolbarPosition]);
+
+    // Hide floating toolbar when clicking outside or losing focus
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (editorContainerRef.current && !editorContainerRef.current.contains(e.target as Node)) {
+                setShowFloatingToolbar(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const handleImageUpload = useCallback(async (file: File) => {
         if (!editor) return;
 
-        // Create temporary preview with base64
-        const reader = new FileReader();
-        reader.onload = () => {
-            if (typeof reader.result === "string") {
-                editor.chain().focus().setImage({ src: reader.result }).run();
-            }
-        };
-        reader.readAsDataURL(file);
+        // Nếu không có productId, không thể upload lên Storage
+        if (!productId) {
+            alert("Vui lòng lưu sản phẩm trước khi thêm ảnh vào nội dung.");
+            return;
+        }
 
-        // If we have a productId, upload to storage and replace
-        if (productId) {
-            try {
-                const result = await uploadProductImage(productId, file);
-                if (result.success && result.url) {
-                    // Image is already inserted as base64, it will be replaced when saved
-                    console.log("Image uploaded:", result.url);
-                }
-            } catch (error) {
-                console.error("Failed to upload image:", error);
+        setIsUploading(true);
+
+        try {
+            // Upload ảnh lên Supabase Storage trước
+            const result = await uploadProductImage(productId, file, { optimize: true });
+
+            if (result.success && result.url) {
+                // Chỉ insert URL sau khi upload thành công (KHÔNG dùng Base64)
+                editor.chain().focus().setImage({ src: result.url }).run();
+                console.log("Ảnh đã được upload và thêm vào editor:", result.url);
+            } else {
+                console.error("Lỗi upload ảnh:", result.error);
+                alert("Không thể tải ảnh lên. Vui lòng thử lại.");
             }
+        } catch (error) {
+            console.error("Lỗi upload ảnh:", error);
+            alert("Đã xảy ra lỗi khi tải ảnh lên. Vui lòng thử lại.");
+        } finally {
+            setIsUploading(false);
         }
     }, [editor, productId]);
 
@@ -139,6 +214,216 @@ export default function RichTextEditor({
         }
     };
 
+    const handleFloatingFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            handleImageUpload(file);
+        }
+        e.target.value = "";
+    };
+
+    // Floating Toolbar Component
+    const FloatingToolbar = useMemo(() => {
+        if (!showFloatingToolbar || !floatingToolbarPos || !editor) return null;
+
+        const isInTable = editor.isActive('table');
+
+        return (
+            <div
+                className="absolute z-50 flex flex-wrap items-center gap-1 p-1.5 bg-white rounded-xl shadow-2xl border border-gray-200 animate-fadeIn"
+                style={{
+                    top: floatingToolbarPos.top,
+                    left: floatingToolbarPos.left,
+                    maxWidth: '320px',
+                }}
+                onMouseDown={(e) => e.preventDefault()} // Prevent losing focus
+            >
+                {/* Basic formatting */}
+                <button
+                    type="button"
+                    onClick={() => editor.chain().focus().toggleBold().run()}
+                    className={`p-1.5 rounded-lg transition-colors ${editor.isActive('bold') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                    title="Đậm"
+                >
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z" />
+                    </svg>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => editor.chain().focus().toggleItalic().run()}
+                    className={`p-1.5 rounded-lg transition-colors ${editor.isActive('italic') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                    title="Nghiêng"
+                >
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M10 4v3h2.21l-3.42 10H6v3h8v-3h-2.21l3.42-10H18V4z" />
+                    </svg>
+                </button>
+
+                <div className="w-px h-5 bg-gray-200 mx-0.5" />
+
+                {/* Text alignment */}
+                <button
+                    type="button"
+                    onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                    className={`p-1.5 rounded-lg transition-colors ${editor.isActive({ textAlign: 'left' }) ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                    title="Căn trái"
+                >
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 3h18v2H3V3zm0 4h12v2H3V7zm0 4h18v2H3v-2zm0 4h12v2H3v-2zm0 4h18v2H3v-2z" />
+                    </svg>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                    className={`p-1.5 rounded-lg transition-colors ${editor.isActive({ textAlign: 'center' }) ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                    title="Căn giữa"
+                >
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 3h18v2H3V3zm3 4h12v2H6V7zm-3 4h18v2H3v-2zm3 4h12v2H6v-2zm-3 4h18v2H3v-2z" />
+                    </svg>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                    className={`p-1.5 rounded-lg transition-colors ${editor.isActive({ textAlign: 'right' }) ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                    title="Căn phải"
+                >
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 3h18v2H3V3zm6 4h12v2H9V7zm-6 4h18v2H3v-2zm6 4h12v2H9v-2zm-6 4h18v2H3v-2z" />
+                    </svg>
+                </button>
+
+                <div className="w-px h-5 bg-gray-200 mx-0.5" />
+
+                {/* Image */}
+                <button
+                    type="button"
+                    onClick={() => floatingFileInputRef.current?.click()}
+                    className="p-1.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                    title="Thêm ảnh"
+                >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                </button>
+
+                {/* Table - insert if not in table */}
+                {!isInTable && (
+                    <button
+                        type="button"
+                        onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+                        className="p-1.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                        title="Thêm bảng"
+                    >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 3v18M14 3v18M3 3h18v18H3V3z" />
+                        </svg>
+                    </button>
+                )}
+
+                {/* Table operations - only show when in table */}
+                {isInTable && (
+                    <>
+                        <div className="w-px h-5 bg-gray-200 mx-0.5" />
+
+                        {/* Add column/row */}
+                        <button
+                            type="button"
+                            onClick={() => editor.chain().focus().addColumnAfter().run()}
+                            className="p-1.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                            title="Thêm cột"
+                        >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => editor.chain().focus().addRowAfter().run()}
+                            className="p-1.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                            title="Thêm hàng"
+                        >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12h16M12 20V4" />
+                            </svg>
+                        </button>
+
+                        {/* Delete column/row */}
+                        <button
+                            type="button"
+                            onClick={() => editor.chain().focus().deleteColumn().run()}
+                            className="p-1.5 rounded-lg transition-colors text-red-500 hover:bg-red-50"
+                            title="Xóa cột"
+                        >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => editor.chain().focus().deleteRow().run()}
+                            className="p-1.5 rounded-lg transition-colors text-red-500 hover:bg-red-50"
+                            title="Xóa hàng"
+                        >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                            </svg>
+                        </button>
+
+                        <div className="w-px h-5 bg-gray-200 mx-0.5" />
+
+                        {/* Vertical alignment */}
+                        <button
+                            type="button"
+                            onClick={() => editor.chain().focus().setCellVerticalAlign('top').run()}
+                            className="p-1.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                            title="Canh trên"
+                        >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3h14M12 7v14" />
+                            </svg>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => editor.chain().focus().setCellVerticalAlign('middle').run()}
+                            className="p-1.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                            title="Canh giữa dọc"
+                        >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5v14" />
+                            </svg>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => editor.chain().focus().setCellVerticalAlign('bottom').run()}
+                            className="p-1.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+                            title="Canh dưới"
+                        >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 21h14M12 3v14" />
+                            </svg>
+                        </button>
+
+                        <div className="w-px h-5 bg-gray-200 mx-0.5" />
+
+                        {/* Delete table */}
+                        <button
+                            type="button"
+                            onClick={() => editor.chain().focus().deleteTable().run()}
+                            className="p-1.5 rounded-lg transition-colors text-red-600 hover:bg-red-50"
+                            title="Xóa bảng"
+                        >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </>
+                )}
+            </div>
+        );
+    }, [showFloatingToolbar, floatingToolbarPos, editor]);
+
     if (!editor) {
         return (
             <div className="border border-gray-300 rounded-lg p-4 min-h-[300px] flex items-center justify-center">
@@ -148,7 +433,7 @@ export default function RichTextEditor({
     }
 
     return (
-        <div className="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+        <div ref={editorContainerRef} className="relative border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
             {/* Toolbar */}
             <div className="flex flex-wrap items-center gap-1 p-2 border-b border-gray-200 bg-gray-50">
                 {/* Text formatting */}
@@ -408,11 +693,34 @@ export default function RichTextEditor({
                 />
             </div>
 
-            {/* Editor Content */}
-            <EditorContent
-                editor={editor}
-                className="min-h-[200px] [&_.ProseMirror]:min-h-[200px]"
+            {/* Floating Toolbar */}
+            {FloatingToolbar}
+
+            {/* Hidden file input for floating toolbar */}
+            <input
+                ref={floatingFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFloatingFileInputChange}
             />
+
+            {/* Editor Content */}
+            <div className="relative">
+                <EditorContent
+                    editor={editor}
+                    className="min-h-[200px] [&_.ProseMirror]:min-h-[200px]"
+                />
+                {/* Upload Loading Overlay */}
+                {isUploading && (
+                    <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-50">
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+                            <span className="text-sm text-gray-600">Đang tải ảnh lên...</span>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Placeholder styling */}
             <style jsx global>{`
@@ -500,6 +808,13 @@ export default function RichTextEditor({
                     width: 4px;
                     background-color: #6366f1;
                     pointer-events: none;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(5px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fadeIn {
+                    animation: fadeIn 0.15s ease-out;
                 }
             `}</style>
         </div>
