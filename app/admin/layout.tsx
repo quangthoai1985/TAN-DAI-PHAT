@@ -1,9 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import AuthGuard from "@/components/admin/AuthGuard";
+import { getSiteSettings, SiteSettings } from "@/lib/settings";
 
 const navItems = [
     {
@@ -61,6 +63,11 @@ export default function AdminLayout({
 }) {
     const pathname = usePathname();
     const router = useRouter();
+    const [settings, setSettings] = useState<SiteSettings>({});
+
+    useEffect(() => {
+        getSiteSettings().then(setSettings);
+    }, []);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -75,9 +82,13 @@ export default function AdminLayout({
                     {/* Logo */}
                     <div className="p-6 border-b border-gray-100">
                         <Link href="/admin" className="flex items-center gap-3 group">
-                            <div className="w-11 h-11 bg-gradient-to-br from-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20 transition-all duration-300 group-hover:shadow-red-500/40 group-hover:scale-105">
-                                <span className="text-white font-bold text-base" style={{ fontFamily: "var(--font-montserrat)" }}>TĐP</span>
-                            </div>
+                            {settings.header_logo ? (
+                                <img src={settings.header_logo} alt="Logo" className="w-11 h-11 object-contain" />
+                            ) : (
+                                <div className="w-11 h-11 bg-gradient-to-br from-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20 transition-all duration-300 group-hover:shadow-red-500/40 group-hover:scale-105">
+                                    <span className="text-white font-bold text-base" style={{ fontFamily: "var(--font-montserrat)" }}>TĐP</span>
+                                </div>
+                            )}
                             <div>
                                 <span
                                     className="font-bold text-gray-900 text-lg tracking-tight block"
@@ -147,9 +158,13 @@ export default function AdminLayout({
                 <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-200 px-4 py-3">
                     <div className="flex items-center justify-between">
                         <Link href="/admin" className="flex items-center gap-2">
-                            <div className="w-9 h-9 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-sm">TĐP</span>
-                            </div>
+                            {settings.header_logo ? (
+                                <img src={settings.header_logo} alt="Logo" className="w-9 h-9 object-contain" />
+                            ) : (
+                                <div className="w-9 h-9 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center">
+                                    <span className="text-white font-bold text-sm">TĐP</span>
+                                </div>
+                            )}
                             <span className="font-bold text-gray-900" style={{ fontFamily: "var(--font-montserrat)" }}>Admin</span>
                         </Link>
                         <button
