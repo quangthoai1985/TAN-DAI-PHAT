@@ -48,19 +48,13 @@ export default function Header({ logoUrl }: { logoUrl?: string }) {
                         href="/"
                         className="flex items-center gap-4 group transition-transform duration-200 hover:scale-[1.02]"
                     >
-                        <div className="relative w-12 h-12 flex items-center justify-center overflow-hidden">
-                            {logoUrl ? (
+                        <div className="relative w-16 h-16 flex items-center justify-center overflow-hidden drop-shadow-md">
+                            {logoUrl && (
                                 <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
-                            ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20">
-                                    <span className="text-white font-bold text-xl" style={{ fontFamily: "var(--font-montserrat)" }}>
-                                        TĐP
-                                    </span>
-                                </div>
                             )}
                         </div>
                         <div>
-                            <p className="text-lg sm:text-2xl md:text-3xl font-bold text-red-600 tracking-tight leading-none" style={{ fontFamily: "var(--font-montserrat)" }}>
+                            <p className="text-xl sm:text-3xl md:text-4xl font-bold text-red-600 tracking-tight leading-none drop-shadow-sm" style={{ fontFamily: "var(--font-montserrat)" }}>
                                 TÂN ĐẠI PHÁT
                             </p>
                         </div>

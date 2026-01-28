@@ -150,12 +150,71 @@ export default function ConfigurationsPage() {
                     description="Logo hiển thị ở chân trang (Footer)"
                 />
 
-                <ImageUploader
-                    title="Favicon"
-                    settingKey="favicon"
-                    currentValue={settings.favicon}
-                    description="Icon hiển thị trên tab trình duyệt"
-                />
+                <Card className="h-full">
+                    <CardHeader>
+                        <CardTitle style={{ fontFamily: "var(--font-montserrat)" }} className="text-lg">
+                            Favicon
+                        </CardTitle>
+                        <p className="text-sm text-gray-500">Icon hiển thị trên tab trình duyệt (tự động chuyển đổi sang .ico)</p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="aspect-video relative bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
+                            <img
+                                src={`/favicon.ico?t=${Date.now()}`}
+                                alt="Favicon"
+                                className="w-16 h-16 object-contain"
+                            />
+                        </div>
+
+                        <div className="relative">
+                            <Input
+                                type="file"
+                                accept="image/*"
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                onChange={async (e) => {
+                                    if (!e.target.files || e.target.files.length === 0) return;
+
+                                    try {
+                                        setUploading("favicon");
+                                        const file = e.target.files[0];
+                                        const formData = new FormData();
+                                        formData.append("file", file);
+
+                                        const response = await fetch("/api/admin/favicon", {
+                                            method: "POST",
+                                            body: formData,
+                                        });
+
+                                        const result = await response.json();
+
+                                        if (result.success) {
+                                            toast.success("Favicon đã được cập nhật! Hãy refresh trang để xem thay đổi.");
+                                            // Force reload favicon by updating the timestamp
+                                            window.location.reload();
+                                        } else {
+                                            throw new Error(result.error || "Failed to update favicon");
+                                        }
+                                    } catch (error) {
+                                        console.error("Error uploading favicon:", error);
+                                        toast.error("Có lỗi xảy ra khi tải favicon lên!");
+                                    } finally {
+                                        setUploading(null);
+                                        e.target.value = "";
+                                    }
+                                }}
+                                disabled={!!uploading}
+                            />
+                            <Button
+                                variant="outline"
+                                className="w-full"
+                                disabled={!!uploading}
+                                isLoading={uploading === "favicon"}
+                            >
+                                {uploading === "favicon" ? "Đang xử lý..." : "Thay đổi Favicon"}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );

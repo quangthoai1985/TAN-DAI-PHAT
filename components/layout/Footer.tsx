@@ -20,19 +20,13 @@ export default function Footer({ logoUrl }: { logoUrl?: string }) {
                     {/* Company Info */}
                     <div className="md:col-span-2">
                         <Link href="/" className="flex items-center gap-4 group w-fit">
-                            <div className="w-12 h-12 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105">
-                                {logoUrl ? (
+                            <div className="w-20 h-20 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105 drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]">
+                                {logoUrl && (
                                     <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
-                                ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20">
-                                        <span className="text-white font-bold text-xl" style={{ fontFamily: "var(--font-montserrat)" }}>
-                                            TĐP
-                                        </span>
-                                    </div>
                                 )}
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-white tracking-tight leading-none group-hover:text-red-500 transition-colors" style={{ fontFamily: "var(--font-montserrat)" }}>
+                                <p className="text-3xl font-bold text-white tracking-tight leading-none group-hover:text-red-500 transition-colors drop-shadow-md" style={{ fontFamily: "var(--font-montserrat)" }}>
                                     TÂN ĐẠI PHÁT
                                 </p>
                             </div>
