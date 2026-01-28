@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import DynamicFavicon from "@/components/layout/DynamicFavicon";
 import { getSiteSettings, SiteSettings } from "@/lib/settings";
 
 export default function LayoutWrapper({
@@ -28,6 +29,7 @@ export default function LayoutWrapper({
 
     return (
         <>
+            <DynamicFavicon />
             <Header logoUrl={settings.header_logo} />
             <main className="min-h-screen">
                 {children}
