@@ -52,7 +52,7 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
                 // Small delay to allow React to update, then fade in
                 setTimeout(() => setIsFading(false), 50);
             }, 300); // 300ms for fade out
-        }, 2000); // Change image every 2 seconds
+        }, 5000); // Change image every 5 seconds
 
         return () => clearInterval(interval);
     }, [sortedImages.length, isHovered, isLightboxOpen]);
